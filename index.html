@@ -1069,6 +1069,7 @@ function boot(){
 
     // if there's progress for this day (or finished), jump straight into the game
     if (guesses.length>0) document.body.classList.add('game-active');
+    if (finished) setTimeout(showResult, 600);   // re-show once if opened already finished
 
     // wiring
     document.getElementById('play-btn').addEventListener('click', ()=>document.body.classList.add('game-active'));
