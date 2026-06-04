@@ -286,16 +286,22 @@
     display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; color: var(--ink);
     font-weight: 700; font-size: 12px; }
   .dist-bar.hot { background: var(--accent); color: #fff; }
-  /* Archive list */
-  .arch-day {
-    display: flex; justify-content: space-between; align-items: center;
-    width: 100%; padding: 12px 14px; margin: 4px 0; cursor: pointer;
-    background: var(--bg); border: 1px solid var(--ink-line); border-radius: 10px;
-    font-family: var(--font-ui); font-size: 14px; color: var(--ink);
-  }
-  .arch-day .tag { font-size: 12px; color: var(--ink-soft); }
-  .arch-day.today { border-color: var(--accent); }
-  @media (hover: hover) { .arch-day:hover { border-color: var(--ink-soft); } }
+  /* Archive — month calendar (matches Racimo) */
+  .archive-cal { max-width: 320px; margin: 8px auto 0; }
+  .cal-head { display: flex; align-items: center; gap: 8px; padding: 4px 4px 12px; }
+  .cal-title { font-family: var(--font-display); font-weight: 700; font-size: 16px; color: var(--ink); text-transform: capitalize; flex: 1; text-align: center; }
+  .cal-nav { width: 32px; height: 32px; flex: none; border-radius: 50%; border: 1px solid var(--ink-line); background: var(--bg); color: var(--ink); font-size: 17px; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .cal-nav[disabled] { opacity: .3; cursor: default; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 0 2px 4px; }
+  .cal-dow { text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .4px; color: var(--ink-soft); padding-bottom: 2px; }
+  .cal-day { height: 40px; display: flex; align-items: center; justify-content: center; font-size: 14px; border-radius: 9px; color: var(--ink); cursor: pointer; font-family: var(--font-ui); }
+  .cal-day.blank { visibility: hidden; }
+  .cal-day.disabled { color: var(--ink-soft); opacity: .3; cursor: default; }
+  .cal-day.today { font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--ink-line); }
+  .cal-day.current { background: var(--accent); color: #fff; font-weight: 700; }
+  .cal-day.played:not(.current) { color: var(--success); font-weight: 700; }
+  .cal-day:not(.disabled):not(.current):active { background: var(--accent-soft); }
+  @media (hover: hover) { .cal-day:not(.disabled):not(.current):hover { background: var(--accent-soft); } }
 
   /* ===================== CELEBRATION MODALS ===================== */
   .goal-panel {
@@ -523,8 +529,8 @@
     <div class="modal">
       <button class="modal-close" data-close>✕</button>
       <h2>Anteriores</h2>
-      <p class="muted">Juega cualquiera de los últimos siete días.</p>
-      <div id="arch-list"></div>
+      <p class="muted">Elige un día para jugar ese acertijo. Disponibles desde el 1 de enero de 2026.</p>
+      <div id="archive-cal" class="archive-cal"></div>
     </div>
   </div>
 
@@ -650,13 +656,13 @@ const TOP = RANK_NAMES.length - 1;
 const MAX_THRESH = RANK_THRESHOLDS[TOP];
 
 /* ---- which day are we playing (today, or an archive day via #hash) ---- */
+const ARCHIVE_START = new Date(2026, 0, 1, 12, 0, 0, 0);
 function pickISO(){
   const h = (location.hash||'').replace('#','');
   if (/^\d{4}-\d{2}-\d{2}$/.test(h)) {
-    const today = new Date(todayISO()+'T12:00:00');
     const that  = new Date(h+'T12:00:00');
-    const diff  = Math.round((today - that)/86400000);
-    if (diff >= 0 && diff <= 6) return h;
+    const today = new Date(todayISO()+'T12:00:00');
+    if (!isNaN(that) && that >= ARCHIVE_START && that <= today) return h;
   }
   return todayISO();
 }
@@ -978,17 +984,51 @@ function applyTheme(t){ document.body.setAttribute('data-theme',t); document.get
   try{ const tw=JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}'); tw.theme=t; LS.setItem(`${GAME}-tweaks`,JSON.stringify(tw)); }catch(e){} }
 function toggleTheme(){ applyTheme(document.body.getAttribute('data-theme')==='black'?'light':'black'); }
 
-function renderArchive(){
-  const box=document.getElementById('arch-list'); const t=todayISO(); box.innerHTML='';
-  for (let i=0;i<7;i++){
-    const d=new Date(t+'T12:00:00'); d.setDate(d.getDate()-i); const iso=isoOf(d);
-    const done = !!LS.getItem(`${GAME}-counted-${iso}`) || (LS.getItem(`${GAME}-board-${iso}`)!==null);
-    const isCur = iso===ISO;
-    const btn=document.createElement('button'); btn.className='arch-day'+(isCur?' today':'');
-    btn.innerHTML=`<span>${i===0?'Hoy':prettyDate(iso)}</span><span class="tag">${i===0?prettyDate(iso):(done?'jugado':'')}</span>`;
-    btn.addEventListener('click', ()=>{ closeModals(); if(iso!==ISO){ location.hash=iso; location.reload(); } else { document.body.classList.add('game-active'); } });
-    box.appendChild(btn);
+let archiveYM = null;
+function openArchive(){
+  const cur = new Date(ISO+'T12:00:00');
+  archiveYM = { y: cur.getFullYear(), m: cur.getMonth() };
+  renderArchiveCal();
+  openModal('arch-modal');
+}
+function renderArchiveCal(){
+  const cal=document.getElementById('archive-cal'); if(!cal) return;
+  cal.innerHTML='';
+  const today=new Date(todayISO()+'T12:00:00');
+  const pad=n=>String(n).padStart(2,'0');
+  const iso=(y,m,d)=>`${y}-${pad(m+1)}-${pad(d)}`;
+  const y=archiveYM.y, m=archiveYM.m;
+  const todayIso=todayISO();
+  const sY=ARCHIVE_START.getFullYear(), sM=ARCHIVE_START.getMonth();
+  const canPrev=(y>sY)||(y===sY&&m>sM);
+  const canNext=(y<today.getFullYear())||(y===today.getFullYear()&&m<today.getMonth());
+  const head=document.createElement('div'); head.className='cal-head';
+  const prev=document.createElement('button'); prev.type='button'; prev.className='cal-nav'; prev.textContent='‹'; prev.disabled=!canPrev;
+  const next=document.createElement('button'); next.type='button'; next.className='cal-nav'; next.textContent='›'; next.disabled=!canNext;
+  const title=document.createElement('div'); title.className='cal-title';
+  title.textContent=cap(new Date(y,m,1).toLocaleDateString('es-ES',{month:'long'}))+' '+y;
+  prev.addEventListener('click',e=>{e.stopPropagation(); if(!canPrev)return; if(--archiveYM.m<0){archiveYM.m=11;archiveYM.y--;} renderArchiveCal();});
+  next.addEventListener('click',e=>{e.stopPropagation(); if(!canNext)return; if(++archiveYM.m>11){archiveYM.m=0;archiveYM.y++;} renderArchiveCal();});
+  head.appendChild(prev); head.appendChild(title); head.appendChild(next); cal.appendChild(head);
+  const grid=document.createElement('div'); grid.className='cal-grid';
+  ['L','M','X','J','V','S','D'].forEach(w=>{const c=document.createElement('div');c.className='cal-dow';c.textContent=w;grid.appendChild(c);});
+  const lead=(new Date(y,m,1).getDay()+6)%7;
+  const dim=new Date(y,m+1,0).getDate();
+  for(let i=0;i<lead;i++){const b=document.createElement('div');b.className='cal-day blank';grid.appendChild(b);}
+  for(let d=1;d<=dim;d++){
+    const cell=document.createElement('div'); cell.className='cal-day'; cell.textContent=d;
+    const dObj=new Date(y,m,d,12,0,0,0), di=iso(y,m,d);
+    if(dObj<ARCHIVE_START||dObj>today){ cell.classList.add('disabled'); }
+    else{
+      if(di===todayIso) cell.classList.add('today');
+      if(di===ISO) cell.classList.add('current');
+      if(LS.getItem(`${GAME}-counted-${di}`)) cell.classList.add('played');
+      cell.addEventListener('click',()=>{ location.hash=(di===todayIso)?'':di; location.reload(); });
+    }
+    grid.appendChild(cell);
   }
+  for(let i=lead+dim;i<42;i++){const b=document.createElement('div');b.className='cal-day blank';grid.appendChild(b);}
+  cal.appendChild(grid);
 }
 
 /* ============================ BOOT ============================ */
@@ -1019,7 +1059,7 @@ function boot(){
     document.getElementById('home-btn').addEventListener('click', ()=>{ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); });
     document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
     document.querySelectorAll('[data-modal]').forEach(a=>a.addEventListener('click', ()=>{ toggleMenu(false); if(a.getAttribute('data-modal')==='stats-modal') renderStats(); if(a.getAttribute('data-modal')==='rangos-modal') renderRangos(); openModal(a.getAttribute('data-modal')); }));
-    document.getElementById('arch-link').addEventListener('click', ()=>{ renderArchive(); openModal('arch-modal'); });
+    document.getElementById('arch-link').addEventListener('click', openArchive);
     document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModals));
     document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click', e=>{ if(e.target===o) closeModals(); }));
     document.querySelectorAll('[data-close-goal]').forEach(b=>b.addEventListener('click', ()=>closeGoal(b.getAttribute('data-close-goal'))));
