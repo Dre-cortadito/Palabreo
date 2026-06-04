@@ -48,6 +48,7 @@
     --tile-present:     var(--accent);     /* right letter, wrong spot (plum) */
     --tile-absent:      #a39b90;           /* not in the word (warm gray) */
     --tile-empty-bd:    #d6d0c6;           /* empty tile border */
+    --key-action:       #544f49;           /* enter/erase keys — neutral, not a letter state */
 
     /* ---- Type ---- */
     --font-display: 'Newsreader', 'DM Serif Display', Georgia, serif;
@@ -74,6 +75,7 @@
     --success:       #86a85a;
     --tile-absent:   #4a443c;
     --tile-empty-bd: #3a342e;
+    --key-action:    #837c72;
   }
 
   * { box-sizing: border-box; }
@@ -105,16 +107,16 @@
     font-size: 15px;
     touch-action: manipulation; user-select: none; -webkit-touch-callout: none;
   }
-  .page-logo { width: 34px; height: 34px; flex: none; }
+  .page-logo { width: 36px; height: 36px; flex: none; }
   .header-home svg { width: 17px; height: 17px; }
   .wordmark {
     font-family: var(--font-display); font-size: 22px; font-weight: 600;
     color: var(--ink); white-space: nowrap;
   }
   .wordmark .dot { color: var(--accent); }
-  .header-nav { display: flex; align-items: center; gap: 18px; position: relative; }
+  .header-nav { display: flex; align-items: center; gap: 16px; position: relative; }
   .header-nav a {
-    font-size: 14px; font-weight: 500; color: var(--ink); text-decoration: none; cursor: pointer;
+    font-size: 13px; font-weight: 500; color: var(--ink); text-decoration: none; cursor: pointer;
     white-space: nowrap;
   }
   .header-nav a.nav-rules { color: var(--accent); }
@@ -153,7 +155,7 @@
     max-width: 720px; margin: 0 auto; min-height: 100dvh;
     display: flex; flex-direction: column;
   }
-  .rank-bar, .keyboard, .game-footer { flex: none; }
+  .rank-bar, .feedback-wrap, .keyboard { flex: none; }
   /* play area grows to fill the gap and centers the board (like NYT Wordle) */
   .play-area { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
     align-items: center; justify-content: center; }
@@ -161,7 +163,7 @@
   /* ============================ RANK BAR ============================ */
   .rank-bar {
     display: flex; align-items: center; gap: 10px;
-    padding: 6px 16px; margin: 0 auto; max-width: 420px;
+    padding: 6px 16px; margin: 0 auto; width: 100%; max-width: 420px;
     cursor: pointer; user-select: none;
   }
   .rank-label {
@@ -384,10 +386,6 @@
 
   /* ============================ KEYBOARD ============================ */
   .keyboard { width: min(98vw, 500px); margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
-  .game-footer { text-align: center; font-size: 12px; color: var(--ink-soft); line-height: 1.5;
-    padding: 14px 16px calc(8px + env(safe-area-inset-bottom)); }
-  .game-footer strong { color: var(--ink); font-weight: 700; }
-  .game-footer .slogan { color: var(--accent); font-weight: 700; }
   .krow { display: flex; gap: 5px; justify-content: center; }
   .key {
     flex: 1; min-width: 0; height: 50px; border-radius: 6px; border: 0;
@@ -399,8 +397,7 @@
   }
   .key:active { transform: scale(.94); }
   .key.wide { flex: 1.5; font-size: 12px; letter-spacing: .3px; }
-  .key.k-enter { background: var(--success); color: #fff; }
-  .key.k-del   { background: var(--accent);  color: #fff; }
+  .key.k-enter, .key.k-del { background: var(--key-action); color: #fff; }
   .key.k-enter svg, .key.k-del svg { width: 22px; height: 22px; stroke: #fff; }
   .key.correct { background: var(--tile-correct); color:#fff; }
   .key.present { background: var(--tile-present); color:#fff; }
@@ -448,12 +445,11 @@
       <span class="rank-chev">▾</span>
     </div>
 
+    <div class="feedback-wrap"><div class="word-feedback" id="word-feedback"></div></div>
     <div class="play-area">
-      <div class="feedback-wrap"><div class="word-feedback" id="word-feedback"></div></div>
       <div class="board" id="board"></div>
     </div>
     <div class="keyboard" id="keyboard"></div>
-    <footer class="game-footer">Un acertijo diario de <strong>Cortadito News</strong><br><span class="slogan">¡Lo esencial en un sorbo!</span></footer>
   </main>
 
   <!-- ============================ MODALS ============================ -->
