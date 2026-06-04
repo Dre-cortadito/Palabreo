@@ -332,8 +332,9 @@
     position: absolute; top: 16px; right: 16px;
     width: 38px; height: 38px; border-radius: 50%;
     border: 1px solid var(--ink-line); background: transparent; color: var(--ink);
-    font-size: 18px; cursor: pointer;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
   }
+  .landing .theme-toggle svg { width: 19px; height: 19px; }
 
   /* ============================ BOARD ============================ */
   .feedback-wrap { position: relative; height: 26px; }
@@ -386,6 +387,9 @@
   }
   .key:active { transform: scale(.94); }
   .key.wide { flex: 1.5; font-size: 12px; letter-spacing: .3px; }
+  .key.k-enter { background: var(--success); color: #fff; }
+  .key.k-del   { background: var(--accent);  color: #fff; }
+  .key.k-enter svg, .key.k-del svg { width: 22px; height: 22px; stroke: #fff; }
   .key.correct { background: var(--tile-correct); color:#fff; }
   .key.present { background: var(--tile-present); color:#fff; }
   .key.absent  { background: var(--tile-absent);  color:#fff; }
@@ -579,6 +583,10 @@ const WORD_LEN = 6, MAX_ROWS = 6;
 const SOLVE_BONUS = {1:60, 2:45, 3:32, 4:22, 5:14, 6:8};
 const PT_CORRECT = 5, PT_PRESENT = 2, LIMPIO_BONUS = 20;
 
+/* theme-toggle icons (shared set: theme-sun / theme-moon) */
+const SUN_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>';
+const MOON_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
 /* ---- localStorage guard ---- */
 const LS = (function () {
   try { window.localStorage.setItem('__t','1'); window.localStorage.removeItem('__t'); return window.localStorage; }
@@ -733,8 +741,8 @@ function buildKeyboard(){
     rowKeys.forEach(k=>{
       const key=document.createElement('button'); key.className='key';
       key.dataset.key=k;
-      if (k==='enter'){ key.classList.add('wide'); key.textContent='Enviar'; }
-      else if (k==='del'){ key.classList.add('wide'); key.setAttribute('aria-label','Borrar'); key.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H8.6a1.7 1.7 0 0 0-1.3.6L2.5 11.4a1 1 0 0 0 0 1.2l4.8 5.8a1.7 1.7 0 0 0 1.3.6H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m11.5 9.5 5 5M16.5 9.5l-5 5"/></svg>'; }
+      if (k==='enter'){ key.classList.add('wide','k-enter'); key.setAttribute('aria-label','Enviar'); key.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'; }
+      else if (k==='del'){ key.classList.add('wide','k-del'); key.setAttribute('aria-label','Borrar'); key.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H8.6a1.7 1.7 0 0 0-1.3.6L2.5 11.4a1 1 0 0 0 0 1.2l4.8 5.8a1.7 1.7 0 0 0 1.3.6H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m11.5 9.5 5 5M16.5 9.5l-5 5"/></svg>'; }
       else key.textContent=k;
       key.addEventListener('click', ()=>handleKey(k));
       row.appendChild(key);
@@ -938,7 +946,7 @@ function closeModals(){ document.querySelectorAll('.modal-overlay.open').forEach
 function openGoal(id){ const p=document.getElementById(id); if(p) p.classList.add('open'); }
 function closeGoal(id){ const p=document.getElementById(id); if(p) p.classList.remove('open'); }
 function toggleMenu(force){ const m=document.getElementById('menu-pop'); m.classList.toggle('open', force); }
-function applyTheme(t){ document.body.setAttribute('data-theme',t); document.getElementById('land-theme').textContent=(t==='black')?'☀':'☾';
+function applyTheme(t){ document.body.setAttribute('data-theme',t); document.getElementById('land-theme').innerHTML=(t==='black')?SUN_SVG:MOON_SVG;
   try{ const tw=JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}'); tw.theme=t; LS.setItem(`${GAME}-tweaks`,JSON.stringify(tw)); }catch(e){} }
 function toggleTheme(){ applyTheme(document.body.getAttribute('data-theme')==='black'?'light':'black'); }
 
@@ -961,7 +969,7 @@ function boot(){
     let theme='light';
     try{ theme=(JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}').theme)||'light'; }catch(e){}
     document.body.setAttribute('data-theme',theme);
-    document.getElementById('land-theme').textContent=(theme==='black')?'☀':'☾';
+    document.getElementById('land-theme').innerHTML=(theme==='black')?SUN_SVG:MOON_SVG;
 
     // landing content
     document.getElementById('land-name').textContent=GAME_NAME;
