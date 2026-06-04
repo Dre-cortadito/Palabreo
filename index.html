@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  CORTADITO GAMES — WORDLE (working name)
+  ============================================================================
+  6x6 daily word guess. Built on the Cortadito shared frame (header, rank bar,
+  reto del día, celebrations, theme, share, storage safety) per
+  _kit/DESIGN-SYSTEM.md. Motif accent pair: PLUM (#9c3b6e) + SAGE (#7a9a6d).
+
+  Scoring (Speed + letters, ascending):
+    +5 per letter discovered in the correct spot (first time)
+    +2 per letter discovered present-but-misplaced (first time)
+    + solve speed bonus by the row you solve on (row1 60 … row6 8)
+    + 20 "Limpio" bonus (solve with zero gray/absent letters) — the ✨ achievement
+  ============================================================================
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wordle · Cortadito News</title>
+<meta name="description" content="Un acertijo diario de Cortadito News. Adivina la palabra de seis letras en seis intentos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Newsreader:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ---- Universal neutrals — shared across every Cortadito game ---- */
+    --bg:               #ffffff;
+    --paper:            #fbfaf6;
+    --ink:              #1a1614;
+    --ink-soft:         #8a847f;
+    --ink-line:         #ece7df;
+    --ink-line-strong:  #c9c2b3;
+    --success:          #6b8e3d;   /* olive — "reto logrado / correct spot" */
+    --error:            #b03434;
+
+    /* ---- Motif accent pair: PLUM + SAGE ---- */
+    --accent:           #9c3b6e;   /* plum — actions, rank bubble, reto, present letters */
+    --accent-deep:      #7c2c56;
+    --accent-soft:      #f3dfe9;
+    --accent-2:         #7a9a6d;   /* sage — secondary motif, quiet highlights */
+    --accent-2-deep:    #5f7d54;
+    --accent-2-soft:    #e7eee1;
+
+    /* ---- Tile feedback ---- */
+    --tile-correct:     var(--success);   /* right letter, right spot (green) */
+    --tile-present:     var(--accent);     /* right letter, wrong spot (plum) */
+    --tile-absent:      #a39b90;           /* not in the word (warm gray) */
+    --tile-empty-bd:    #d6d0c6;           /* empty tile border */
+
+    /* ---- Type ---- */
+    --font-display: 'Newsreader', 'DM Serif Display', Georgia, serif;
+    --font-ui:      'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+    /* ---- Layout (fixed numbers — DESIGN-SYSTEM.md §2) ---- */
+    --header-h: 56px;
+    --rank-top: 66px;
+  }
+  /* Dark theme — lift neutrals + accents one step. */
+  body[data-theme="black"] {
+    --bg:        #0e0c0a;
+    --paper:     #1a1614;
+    --ink:       #f3eee4;
+    --ink-soft:  #8a8278;
+    --ink-line:  #2a2420;
+    --ink-line-strong:#4a4138;
+    --accent:        #c25e92;
+    --accent-deep:   #a44a78;
+    --accent-soft:   #2c1a24;
+    --accent-2:      #9bbb8d;
+    --accent-2-deep: #76985f;
+    --accent-2-soft: #1b2117;
+    --success:       #86a85a;
+    --tile-absent:   #4a443c;
+    --tile-empty-bd: #3a342e;
+  }
+
+  * { box-sizing: border-box; }
+  html { height: 100%; overflow: hidden; overscroll-behavior: contain; background: var(--bg); }
+  body {
+    margin: 0; min-height: 100%;
+    background: var(--bg); color: var(--ink);
+    font-family: var(--font-ui);
+    -webkit-text-size-adjust: 100%;
+    opacity: 0; transition: opacity .2s ease;
+  }
+  body.ready { opacity: 1; }
+  body.game-active { height: 100dvh; overflow: hidden; overscroll-behavior: contain; }
+
+  /* ============================ HEADER ============================ */
+  .page-header {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    height: var(--header-h);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; background: var(--bg);
+    border-bottom: 1px solid var(--ink-line);
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .header-home {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid var(--ink-line); background: transparent;
+    color: var(--ink); cursor: pointer; flex: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    touch-action: manipulation; user-select: none; -webkit-touch-callout: none;
+  }
+  .page-logo { width: 26px; height: 26px; flex: none; }
+  .wordmark {
+    font-family: var(--font-display); font-size: 22px; font-weight: 600;
+    color: var(--ink); white-space: nowrap;
+  }
+  .wordmark .dot { color: var(--accent); }
+  .header-nav { display: flex; align-items: center; gap: 14px; position: relative; }
+  .header-nav a {
+    font-size: 13px; color: var(--ink); text-decoration: none; cursor: pointer;
+    white-space: nowrap;
+  }
+  .header-nav a.nav-rules { color: var(--accent); }
+  .hamburger {
+    background: transparent; border: 0; color: var(--ink); font-size: 20px;
+    cursor: pointer; padding: 4px 6px; line-height: 1;
+    touch-action: manipulation; user-select: none;
+  }
+  /* ☰ dropdown */
+  .menu-pop {
+    position: absolute; top: 36px; right: 0; z-index: 80;
+    background: var(--paper); border: 1.5px solid var(--ink-line);
+    border-radius: 12px; padding: 6px; min-width: 200px;
+    box-shadow: 0 14px 44px rgba(0,0,0,.20), 0 4px 12px rgba(0,0,0,.08);
+    display: none; flex-direction: column;
+  }
+  .menu-pop.open { display: flex; }
+  .menu-pop button {
+    background: transparent; border: 0; text-align: left; cursor: pointer;
+    font-family: var(--font-ui); font-size: 14px; color: var(--ink);
+    padding: 10px 12px; border-radius: 8px;
+  }
+  @media (hover: hover) { .menu-pop button:hover { background: var(--accent-soft); } }
+  @media (hover: hover) {
+    .header-home:hover { border-color: var(--ink-soft); }
+    .header-nav a:hover { color: var(--accent); }
+  }
+  @media (max-width: 560px) {
+    body.game-active .wordmark { display: none; }
+    .header-nav { gap: 10px; }
+    .header-nav a { font-size: 12px; }
+  }
+
+  main { padding-top: var(--rank-top); padding-bottom: 12px; max-width: 720px; margin: 0 auto; }
+
+  /* ============================ RANK BAR ============================ */
+  .rank-bar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 16px; margin: 0 auto; max-width: 420px;
+    cursor: pointer; user-select: none;
+  }
+  .rank-label {
+    font-family: var(--font-ui); font-size: 13px; font-weight: 600;
+    color: var(--ink-soft); white-space: nowrap; min-width: 78px;
+  }
+  .rank-label.at-maestro { color: var(--accent); }
+  .rank-track { position: relative; flex: 1; height: 22px; }
+  .rank-track-line {
+    position: absolute; top: 50%; left: 0; right: 0; height: 3px;
+    transform: translateY(-50%); background: var(--ink-line); border-radius: 2px;
+  }
+  .rank-dot {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 6px; height: 6px; border-radius: 50%; background: var(--ink-soft);
+  }
+  .rank-dot.passed { background: var(--ink); }
+  .rank-dot.current {
+    width: 24px; height: 24px; background: var(--accent);
+    color: #fff; font-family: var(--font-ui); font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+  .rank-dot.current.done { background: var(--success); }
+  .rank-dot.current.at-maestro { background: var(--accent); }
+  .rank-marker {
+    position: absolute; top: 50%; transform: translate(-50%, -50%);
+    width: 3px; height: 26px; border-radius: 2px;
+    background: var(--accent); opacity: .95;
+  }
+  .rank-marker.done { background: var(--success); }
+  .rank-chev { color: var(--ink-soft); font-size: 12px; }
+
+  /* ============================ BUTTONS ============================ */
+  button.btn {
+    background: var(--bg); border: 1px solid var(--ink-line); color: var(--ink);
+    padding: 14px 30px; font-size: 16px; font-weight: 500;
+    border-radius: 999px; cursor: pointer; font-family: var(--font-ui);
+    transition: border-color .15s, color .15s, transform .08s, background .15s;
+    min-width: 120px;
+    touch-action: manipulation; user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (hover: hover) { button.btn:hover { border-color: var(--ink); } }
+  button.btn:active { transform: scale(.96); background: var(--paper); }
+  button.btn.primary { font-weight: 600; }
+
+  /* ============================ MODALS ============================ */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(20,18,14,.55);
+    display: none; align-items: flex-start; justify-content: center;
+    padding: 40px 16px; overflow: auto; overscroll-behavior: contain;
+  }
+  body[data-theme="black"] .modal-overlay { background: rgba(0,0,0,.78); }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    position: relative; width: 100%; max-width: 560px; max-height: 85vh;
+    overflow: auto; overscroll-behavior: contain;
+    background: var(--paper); border: 1.5px solid var(--ink-line);
+    border-radius: 16px; padding: 28px 32px;
+    box-shadow: 0 16px 50px rgba(0,0,0,.18);
+  }
+  .modal h2 { font-family: var(--font-display); font-size: 28px; margin: 0 0 10px; }
+  .modal h3 { font-family: var(--font-display); font-size: 18px; margin: 18px 0 8px; }
+  .modal p { color: var(--ink); line-height: 1.55; }
+  .modal .muted { color: var(--ink-soft); font-size: 14px; }
+  .modal-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid var(--ink-line); background: var(--bg); color: var(--ink);
+    font-size: 18px; cursor: pointer; line-height: 1; touch-action: manipulation;
+  }
+  /* mini tiles used inside the rules legend */
+  .legend-row { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+  .legend-tiles { display: flex; gap: 4px; flex: none; }
+  .mini-tile {
+    width: 30px; height: 30px; border-radius: 5px; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 15px; font-family: var(--font-ui);
+    border: 2px solid var(--tile-empty-bd); background: transparent; color: var(--ink);
+  }
+  .mini-tile.correct { background: var(--tile-correct); border-color: var(--tile-correct); color:#fff; }
+  .mini-tile.present { background: var(--tile-present); border-color: var(--tile-present); color:#fff; }
+  .mini-tile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
+  .legend-row .txt { font-size: 14px; color: var(--ink); }
+  /* Rangos list */
+  .rank-row {
+    display: flex; justify-content: space-between; padding: 8px 10px;
+    border-bottom: 1px solid var(--ink-line); font-size: 14px;
+  }
+  .rank-row.current { background: var(--accent); color: #fff; border-radius: 6px; }
+  .rank-row.is-top .name { color: var(--accent); font-weight: 700; }
+  .rank-row.current.is-top .name { color: #fff; }
+  /* Stats */
+  .stat-grid { display: flex; gap: 8px; text-align: center; margin: 10px 0 4px; }
+  .stat-cell { flex: 1; }
+  .stat-cell .n { font-family: var(--font-display); font-size: 30px; color: var(--ink); line-height: 1; }
+  .stat-cell .l { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
+  .dist-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
+  .dist-row .k { width: 14px; color: var(--ink-soft); text-align: right; }
+  .dist-bar { background: var(--ink-line); border-radius: 4px; height: 20px; min-width: 24px;
+    display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; color: var(--ink);
+    font-weight: 700; font-size: 12px; }
+  .dist-bar.hot { background: var(--accent); color: #fff; }
+  /* Archive list */
+  .arch-day {
+    display: flex; justify-content: space-between; align-items: center;
+    width: 100%; padding: 12px 14px; margin: 4px 0; cursor: pointer;
+    background: var(--bg); border: 1px solid var(--ink-line); border-radius: 10px;
+    font-family: var(--font-ui); font-size: 14px; color: var(--ink);
+  }
+  .arch-day .tag { font-size: 12px; color: var(--ink-soft); }
+  .arch-day.today { border-color: var(--accent); }
+  @media (hover: hover) { .arch-day:hover { border-color: var(--ink-soft); } }
+
+  /* ===================== CELEBRATION MODALS ===================== */
+  .goal-panel {
+    position: fixed; inset: 0; z-index: 70; display: none;
+    align-items: center; justify-content: center; padding: 24px;
+    background: rgba(20,18,14,.5);
+  }
+  .goal-panel.open { display: flex; }
+  .goal-card {
+    background: #ffffff; color: #1a1614;
+    border-radius: 20px; padding: 36px 32px 28px; max-width: 380px; width: 100%;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.25);
+  }
+  .goal-mark { width: 72px; height: 72px; margin: 0 auto 14px; display: block; }
+  .goal-headline { font-family: var(--font-display); font-size: 34px; margin: 0 0 6px; color: #1a1614; }
+  .goal-headline.maestro { color: var(--accent); }
+  .goal-subhead { color: #6b6660; margin: 0 0 18px; }
+  .goal-actions { display: flex; gap: 10px; justify-content: center; }
+
+  /* ============================ LANDING ============================ */
+  .landing {
+    position: fixed; inset: 0; z-index: 50; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 24px; gap: 6px;
+  }
+  body.game-active .landing { display: none; }
+  .landing .logo-lg { width: 84px; height: 84px; margin-bottom: 14px; }
+  .landing h1 {
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(56px, 12vw, 88px); letter-spacing: -2px;
+    line-height: 1; margin: 0; color: var(--ink);
+  }
+  .landing .tagline {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: 19px; color: var(--ink); max-width: 320px; line-height: 1.35;
+    margin: 12px 0 4px;
+  }
+  .landing .date { color: var(--ink); font-size: 14px; margin: 14px 0 0; font-feature-settings: "tnum"; }
+  .landing .reto { margin: 4px 0 20px; display: inline-flex; align-items: baseline; gap: 8px; }
+  .landing .reto .lbl { text-transform: uppercase; letter-spacing: 1.8px; font-size: 10px; font-weight: 700; color: var(--ink-soft); }
+  .landing .reto .val { font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--accent); }
+  .landing .play {
+    margin-top: 4px; background: var(--ink); color: var(--bg);
+    border: 2px solid var(--ink); border-radius: 999px;
+    padding: 15px 24px; width: 260px; max-width: 100%;
+    font-family: var(--font-ui); font-weight: 700; font-size: 16px; letter-spacing: .4px;
+    cursor: pointer; transition: background .15s, color .15s, transform .1s;
+    touch-action: manipulation; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent;
+  }
+  @media (hover: hover) { .landing .play:hover { background: var(--accent); border-color: var(--accent); color: #fff; } }
+  .landing .play:active { transform: scale(.98); }
+  .landing .sub-link {
+    font-size: 13px; color: var(--ink-soft); cursor: pointer; margin-top: 14px;
+    border-bottom: 1px solid var(--ink-line); padding-bottom: 2px; text-decoration: none;
+  }
+  @media (hover: hover) { .landing .sub-link:hover { color: var(--accent); border-color: var(--accent); } }
+  .landing .credit { font-size: 12px; color: var(--ink-soft); margin-top: 22px; max-width: 340px; letter-spacing: .2px; }
+  .landing .credit strong { color: var(--ink); font-weight: 700; }
+  .landing .credit .slogan { color: var(--accent); font-weight: 700; }
+  .landing .theme-toggle {
+    position: absolute; top: 16px; right: 16px;
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid var(--ink-line); background: transparent; color: var(--ink);
+    font-size: 18px; cursor: pointer;
+  }
+
+  /* ============================ BOARD ============================ */
+  .feedback-wrap { position: relative; height: 26px; }
+  .word-feedback {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+    font-family: var(--font-ui); font-size: 17px; font-weight: 800;
+    color: var(--ink); opacity: 0; transition: opacity .18s, transform .22s;
+    white-space: nowrap; pointer-events: none;
+    background: var(--ink); color: var(--bg); padding: 6px 14px; border-radius: 8px;
+  }
+  .word-feedback.show { opacity: 1; transform: translate(-50%, -50%); }
+  .word-feedback.success { background: var(--success); color: #fff; }
+  .word-feedback.bonus  { background: var(--accent);  color: #fff; }
+  .word-feedback.error  { background: var(--error);   color: #fff; }
+
+  .board {
+    display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px;
+    justify-content: center; margin: 8px auto 0;
+    width: min(86vw, 330px);
+  }
+  .brow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+  .tile {
+    aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-ui); font-weight: 700; text-transform: uppercase;
+    font-size: clamp(18px, 6.4vw, 28px); color: var(--ink);
+    border: 2px solid var(--tile-empty-bd); border-radius: 6px;
+    background: transparent; user-select: none;
+    transition: transform .12s;
+  }
+  .tile.filled { border-color: var(--ink-soft); }
+  .tile.pop { animation: pop .12s ease; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+  .tile.reveal { animation: flip .5s ease forwards; }
+  @keyframes flip { 0%{transform:rotateX(0)} 50%{transform:rotateX(90deg)} 100%{transform:rotateX(0)} }
+  .tile.correct { background: var(--tile-correct); border-color: var(--tile-correct); color:#fff; }
+  .tile.present { background: var(--tile-present); border-color: var(--tile-present); color:#fff; }
+  .tile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
+  .brow.shake { animation: shake .4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
+
+  /* ============================ KEYBOARD ============================ */
+  .keyboard { width: min(98vw, 500px); margin: 12px auto 0; display: flex; flex-direction: column; gap: 6px; }
+  .krow { display: flex; gap: 5px; justify-content: center; }
+  .key {
+    flex: 1; min-width: 0; height: 50px; border-radius: 6px; border: 0;
+    background: var(--ink-line); color: var(--ink);
+    font-family: var(--font-ui); font-weight: 700; font-size: 15px; text-transform: uppercase;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    touch-action: manipulation; user-select: none; -webkit-tap-highlight-color: transparent;
+    transition: transform .06s, background .15s;
+  }
+  .key:active { transform: scale(.94); }
+  .key.wide { flex: 1.5; font-size: 12px; letter-spacing: .3px; }
+  .key.correct { background: var(--tile-correct); color:#fff; }
+  .key.present { background: var(--tile-present); color:#fff; }
+  .key.absent  { background: var(--tile-absent);  color:#fff; }
+  @media (max-width: 380px) { .key { height: 46px; font-size: 14px; } }
+</style>
+</head>
+<body data-theme="light">
+
+  <!-- ============================ HEADER ============================ -->
+  <header class="page-header">
+    <div class="header-left">
+      <button class="header-home" id="home-btn" aria-label="Inicio">⌂</button>
+      <svg class="page-logo" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="3"  y="3"  width="12" height="12" rx="3" fill="var(--accent)"/>
+        <rect x="17" y="3"  width="12" height="12" rx="3" fill="var(--accent-2)"/>
+        <rect x="3"  y="17" width="12" height="12" rx="3" fill="var(--accent-2)"/>
+        <rect x="17" y="17" width="12" height="12" rx="3" fill="var(--accent)"/>
+      </svg>
+      <span class="wordmark">Wordle<span class="dot">.</span></span>
+    </div>
+    <nav class="header-nav">
+      <a class="nav-rules" data-modal="reglas-modal">Reglas</a>
+      <a data-modal="stats-modal">Estadísticas</a>
+      <a id="arch-link">Anteriores</a>
+      <button class="hamburger" id="menu-btn" aria-label="Más">☰</button>
+      <div class="menu-pop" id="menu-pop">
+        <button id="m-theme">Tema</button>
+        <button id="m-share">Compartir</button>
+        <button data-modal="about-modal">Sobre el juego</button>
+        <button id="m-sub">Suscribirse al boletín</button>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============================ RANK BAR + BOARD ============================ -->
+  <main>
+    <div class="rank-bar" id="rank-bar" role="button" tabindex="0" aria-label="Ver rangos">
+      <span class="rank-label" id="rank-label">Debutante</span>
+      <div class="rank-track" id="rank-track">
+        <div class="rank-track-line"></div>
+      </div>
+      <span class="rank-chev">▾</span>
+    </div>
+
+    <div class="feedback-wrap"><div class="word-feedback" id="word-feedback"></div></div>
+    <div class="board" id="board"></div>
+    <div class="keyboard" id="keyboard"></div>
+  </main>
+
+  <!-- ============================ MODALS ============================ -->
+  <div class="modal-overlay" id="reglas-modal">
+    <div class="modal">
+      <button class="modal-close" data-close>✕</button>
+      <h2>Cómo jugar</h2>
+      <p>Adivina la <b>palabra del día</b> de seis letras en seis intentos. Cada intento debe ser una palabra válida en español.</p>
+      <p class="muted">Tras cada intento, las casillas cambian de color para mostrar qué tan cerca estuviste.</p>
+      <div class="legend-row">
+        <div class="legend-tiles">
+          <div class="mini-tile correct">C</div><div class="mini-tile">A</div><div class="mini-tile">F</div>
+        </div>
+        <div class="txt"><b>Verde:</b> la letra está y va en ese lugar.</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-tiles">
+          <div class="mini-tile">S</div><div class="mini-tile present">O</div><div class="mini-tile">L</div>
+        </div>
+        <div class="txt"><b>Ciruela:</b> la letra está, pero en otro lugar.</div>
+      </div>
+      <div class="legend-row">
+        <div class="legend-tiles">
+          <div class="mini-tile">T</div><div class="mini-tile">U</div><div class="mini-tile absent">X</div>
+        </div>
+        <div class="txt"><b>Gris:</b> la letra no está en la palabra.</div>
+      </div>
+      <h3>Puntos y rango</h3>
+      <p class="muted">Ganas puntos por cada letra que descubras (+5 en su sitio, +2 fuera de sitio) y un bono por resolver pronto. Resolver sin ninguna casilla gris te da el bono <b style="color:var(--accent)">✨ Limpio</b>. Los puntos hacen subir tu rango y cruzan el <b>Reto del día</b>.</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="stats-modal">
+    <div class="modal">
+      <button class="modal-close" data-close>✕</button>
+      <h2>Estadísticas</h2>
+      <p><b>Hoy:</b> <span id="stat-today">0 pts · Debutante</span></p>
+      <div class="stat-grid" id="stat-grid"></div>
+      <h3>Distribución de intentos</h3>
+      <div id="dist-box"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="rangos-modal">
+    <div class="modal">
+      <button class="modal-close" data-close>✕</button>
+      <h2>Rangos</h2>
+      <p class="muted">Sube de rango acumulando puntos. <span id="rangos-reto"></span></p>
+      <div id="rangos-list"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="arch-modal">
+    <div class="modal">
+      <button class="modal-close" data-close>✕</button>
+      <h2>Anteriores</h2>
+      <p class="muted">Juega cualquiera de los últimos siete días.</p>
+      <div id="arch-list"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="about-modal">
+    <div class="modal">
+      <button class="modal-close" data-close>✕</button>
+      <h2>Sobre el juego</h2>
+      <p>Un acertijo diario de palabras de <b>Cortadito News</b>. La misma palabra para todo el mundo, cada día.</p>
+      <p class="muted">¡Lo esencial en un sorbo!</p>
+    </div>
+  </div>
+
+  <!-- ===================== CELEBRATIONS ===================== -->
+  <div class="goal-panel" id="goal-panel" role="dialog" aria-modal="true">
+    <div class="goal-card">
+      <svg class="goal-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="8" fill="var(--accent)"/>
+        <path d="M10 16.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <h2 class="goal-headline">¡Buen sorbo!</h2>
+      <p class="goal-subhead">Alcanzaste el Reto del día.</p>
+      <div class="goal-actions">
+        <button class="btn primary" id="goal-share">Compartir</button>
+        <button class="btn" data-close-goal="goal-panel">Seguir</button>
+      </div>
+    </div>
+  </div>
+  <div class="goal-panel" id="maestro-panel" role="dialog" aria-modal="true">
+    <div class="goal-card">
+      <svg class="goal-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <rect x="2" y="2" width="28" height="28" rx="8" fill="var(--accent)"/>
+        <path d="M16 6l2.6 5.6L24 12l-4 3.9 1 5.6L16 19l-5 2.5 1-5.6L8 12l5.4-.4z" fill="#fff"/>
+      </svg>
+      <h2 class="goal-headline maestro">¡Maestro/a!</h2>
+      <p class="goal-subhead">Llegaste a la cima del día.</p>
+      <div class="goal-actions">
+        <button class="btn primary" id="maestro-share">Compartir</button>
+        <button class="btn" data-close-goal="maestro-panel">Seguir</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================ LANDING ============================ -->
+  <div class="landing" id="landing">
+    <button class="theme-toggle" id="land-theme" aria-label="Tema">☾</button>
+    <svg class="logo-lg" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="3"  y="3"  width="12" height="12" rx="3" fill="var(--accent)"/>
+      <rect x="17" y="3"  width="12" height="12" rx="3" fill="var(--accent-2)"/>
+      <rect x="3"  y="17" width="12" height="12" rx="3" fill="var(--accent-2)"/>
+      <rect x="17" y="17" width="12" height="12" rx="3" fill="var(--accent)"/>
+    </svg>
+    <h1 id="land-name">Wordle</h1>
+    <div class="tagline" id="land-tagline">¿Cuál es la palabra de hoy?</div>
+    <div class="date" id="land-date">—</div>
+    <div class="reto">
+      <span class="lbl">Reto del día</span>
+      <span class="val" id="land-reto">— pts</span>
+    </div>
+    <button class="play" id="play-btn">Jugar</button>
+    <div class="sub-link" id="land-sub">Suscribirse al boletín</div>
+    <div class="credit">Un acertijo diario de <strong>Cortadito News</strong> · <span class="slogan">¡Lo esencial en un sorbo!</span></div>
+  </div>
+
+<script>
+const SOLUTIONS=["cuando","quiero","porque","tienes","estaba","verdad","tiempo","siento","puedes","hombre","parece","quiere","podria","hablar","dinero","mañana","seguro","espera","queria","tienen","alguna","cierto","pasado","chicos","cuenta","amigos","cabeza","cariño","pueden","genial","muchas","volver","manera","rapido","dentro","semana","quizas","espero","juntos","pronto","cuanto","muerte","esposa","dejame","noches","ningun","equipo","llegar","aunque","primer","ultima","pensar","sangre","tenido","cuerpo","entrar","fiesta","muchos","numero","chicas","comida","fueron","seguir","estuvo","ademas","habria","estara","siendo","acerca","dormir","ayudar","marido","idiota","venido","musica","anoche","llamar","piensa","perdon","pienso","llevar","prueba","afuera","detras","cuarto","buscar","cambio","perder","vuelve","agente","frente","estare","asunto","encima","sucede","medico","siente","propia","fuerza","supone","estuve","vuelto","adonde","fuiste","propio","hablas","ocurre","quiera","tenias","conoce","sentir","traves","hambre","normal","gustan","tendra","dejado","tengas","espere","abuela","muerta","regalo","amable","ataque","partes","basura","esposo","tendre","locura","alegro","abuelo","triste","crimen","escena","llamas","viendo","cocina","vienen","drogas","listos","simple","sabias","puedas","apenas","vuelva","salvar","existe","vienes","juicio","veamos","formas","humano","iremos","habian","debido","tenian","debajo","sueños","sigues","podido","habeis","salida","tratar","llevas","alegra","bailar","diablo","precio","volvio","libros","cielos","matado","accion","reglas","contar","estais","empezo","llaman","vuelvo","estilo","quedar","cartas","probar","marcha","dejare","cuello","conoci","pareja","verano","correr","traido","llegue","opcion","cierra","exacto","pedido","fuimos","dejalo","quedan","visita","usando","ganado","mismos","tomado","habias","salido","motivo","acabar","dieron","llaves","perros","partir","metros","menudo","casado","enorme","viejos","anillo","camion","vender","luchar","vendra","sonido","pasada","codigo","imagen","riesgo","alguno","millon","prensa","querer","vengan","pasara","herido","perdio","mirame","llorar","colega","cantar","dejeme","teneis","pelear","pierna","acabas","clases","cuidar","huevos","podras","puntos","animal","hechos","tengan","oferta","sentia","herida","oscuro","tardes","eramos","cerrar","humana","llevan","actuar","siguen","romper","cambia","fiscal","gratis","sexual","acceso","merece","tantas","varios","efecto","espada","habido","limpio","juegos","correo","confia","teatro","creeme","elegir","tantos","pastel","digame","olvide","varias","teoria","cuento","diario","metido","enviar","sabido","fueras","robado","premio","harias","inutil","puedan","lengua","ladron","examen","entero","modelo","futbol","sabado","hables","tamaño","sienta","amante","amigas","ibamos","camisa","pedazo","vieron","bebida","tercer","lluvia","recien","tomare","toques","vision","libras","entera","hablan","quieto","cargos","podias","helado","aparte","famoso","sujeto","saldra","sabeis","cortar","muevas","quedas","social","carter","podeis","empleo","compre","duerme","huesos","pagina","casada","matare","pondre","comido","salgan","empece","cierta","limpia","confio","gustas","cuales","labios","whisky","pelota","pobres","dioses","abrigo","olvida","coches","charla","rompio","piense","acaban","viajar","millas","fueran","compra","ciento","dijera","sotano","cheque","dimelo","saltar","recibi","pierde","alerta","llegas","rapida","sacado","crisis","cuerda","pasaba","mentir","compro","servir","pongas","alarma","vernos","reales","altura","maximo","ilegal","gritar","excusa","dulces","comodo","firmar","muñeca","rastro","vivido","decidi","traigo","fresco","seamos","guarda","bestia","alteza","deseos","vengas","jueves","sesion","veneno","martes","digale","limite","lineas","tropas","manten","verlos","escapo","traere","lograr","golpeo","pecado","comite","titulo","panico","pasion","llegan","darles","darnos","apesta","buscas","enseño","mirate","oceano","pagado","acepto","hierba","crecer","mental","mismas","dirige","suelta","podian","sabian","patron","medida","nacido","fisica","fiebre","golpes","bombas","judios","cruzar","delito","atacar","objeto","ruedas","sufrir","evento","maleta","piezas","paliza","ocurra","quitar","llames","celoso","vecino","collar","fondos","montar","grados","mortal","cierre","dejala","echado","platos","dejara","tontos","sabria","hombro","biblia","sitios","peores","buscan","restos","cuadro","pesado","deseas","pondra","aceite","querra","podran","chiste","actual","morira","traiga","asalto","asusta","medica","cogido","minimo","tomara","faltan","gritos","escape","ensayo","quedes","garaje","dragon","grupos","barato","fingir","recibo","vayase","madres","niñera","recibe","abrazo","perfil","actriz","repito","pistas","camina","pagare","moneda","seguia","tocado","creado","acepta","opinas","barcos","viejas","tratas","tirado","viajes","hierro","serias","puesta","siglos","serian","hacian","bromas","coraje","adulto","mandar","gastos","entren","suceda","payaso","diseño","tomalo","sabras","diselo","mueren","siguio","decide","tanque","terror","peleas","unicos","figura","notado","lanzar","cubrir","armada","sueldo","bolsas","hallar","lidiar","damelo","decian","usarlo","docena","medias","miralo","fisico","hacias","famosa","rutina","comoda","traeme","socios","novela","gustar","fijate","mintio","listas","causar","trucos","cabina","formar","orejas","detuvo","agenda","llores","pongan","fianza","usamos","miente","pierdo","ofrece","discos","cerdos","entere","salgas","pescar","mezcla","colgar","sintio","tipico","ayudas","tratan","estres","cartel","cargar","postre","escala","origen","llamen","largas","agrada","taller","armado","habran","bebido","huella","agarra","celosa","copias","receta","normas","cambie","magico","invito","odiaba","fraude","junior","miraba","bienes","higado","decias","lleven","llenar","sonrie","ordeno","cuente","trajes","idioma","acento","indica","deudas","craneo","jugada","signos","dirias","pedire","tareas","haceis","casino","vendio","chaval","ventas","alivio","trauma","golpea","logica","eligio","pechos","fresca","mentes","dibujo","gastar","apagar","harian","chinos","asumir","pintar","maxima","cuanta","dejaba","juzgar","quemar","cuarta","metodo","afecta","jugado","graves","riendo","pasear","vigila","corran","pegado","poesia"];
+const VALID_STR="ababol abadia abajar abakua abalar abanar abanda abanto abarca abarse abatir abazon abañar abedul abejar abejeo abejon abense abenuz abetal abigeo abinar abipon abisal abismo abitar abiton ablano abobar abocar abofar abogar abolia abolid abolio abolir abolis abonar aborto aboyar abrala abralo abrame abrase abrazo abrego abrela abrele abrelo abreme abrete abrigo abrila abrile abrilo abrime abrios abrite abrojo abside abuela abuelo abulia abulon aburar abusar abuson abuzar acaban acabar acabas acacia acadio acaece acamar acanto acarar acatar acaule acceso accion acecho acedar acedia aceite acelga acento acepar acepta acepto acerar acerbo acerca acervo acetar acetre acezar aciago aciano acibar acidez acidia acigos acimut acocar acodar acoger acolar acopar acopio acorar acorde acosar acotar actina activa activo actriz actual actuar acucia acudir acular aculla acunar acuoso acusar acuson acuñar adagio adalid adamar adarce adarga adarme adarve adelfa ademan ademar ademas adenda adenia adepto adeudo adicto adobar adonde adonis adorar adorno adosar adrede adrian aduana aducir adujar adular adulon adulto adunar adusto adveni afable afacer afamar afanar afasia afatar afecta afecto afeite afelio aferir afgano afiche afijar afilar afinar afluir afofar afogar afonia aforar afosar africa africo aftoso afuera afufar afumar aganar agarra agarre agenda agente agitar agobio agolar agonia agorar agosta agosto agotar agrada agrado agrafo agrear agriar agrura aguada aguaza aguazo aguero aguila aguita agujal aguoso aguzar ahajar aherir ahijar ahilar ahinco ahitar ahogar ahorro ahotar ahoyar ahuate ahumar ahusar aijada aimara aipuno airada airear airoso aislar ajenar ajenjo ajiaco ajimez ajizal ajolio ajonje ajonjo ajorar ajorca ajotar ajumar ajuste alabar alabeo aladar aladro alafia alagar alaman alamar alamin alarbe alarde alarma alaves alazan alazor albano albear albedo albero albert albina albino albita albugo albura alcali alcana alcano alcedo alcese alcino alcion alcoba alcuza aldaba aldino aldiza aleche alegar alegra alegre alegro alejar alelar aleman alepin alerce aleron alerta alevin alexia alfana alfoli algara algido algoso alguna alguno alhaja alheli alheña aliado aliaga alible alicer alicia alijar alioli alisar alisma alitan alivio alizar aliñar aljaba aljama aljibe aljuba aljuma almaja almeja almena almete almiar almona almora alnico alobar alocar alodio alogar alojar alomar alonso alosna alotar alpaca alpina alpino alquez alrota alsine altana altano altear alteza alteño altivo altura alubia aludir alugar alumno alunar aluzar alvino alzada alzado alzaos alzate amable amadla amadlo amadme amador amagar amalas amalos amanda amanos amante amarar amargo amarre amasar amasio amatar amañar ambito amblar ambleo amebeo amelas amelga amelos amenla amenlo amenme amenos amento amerar amigar amigas amigos aminar amnios amolar amonar amonio amores amorfo amorio amover amparo ampere amplio amprar amufar amular amurar anafre ananas ancado anchar anchoa anclar ancora ancudo ancusa andaba andada andado andais andale andana andaos andara andare andase andate andeis andele andero andina andino andola andrew anduve anduvo anegar anejar anejir anemia aneota anexar anfion anfora angela angina angora angulo anhelo aniaga anidar aniego anilla anillo animal animar anisal anisar aniñar anoche anomia anorza anotar ansiar antaño anteco antejo antena antera anteve antier antoja antoje antojo antrax anudar anular anuria aovado apacer apagar apagon aparar aparir aparte apatia apañar apegar apelar apenar apenas aperar apesta apiano apical apilar apipar apitar apiñar aplomo apocar apodar apogeo aponer aporca aposar apoyar apozar aprisa aproar apside aptero apunar apunte apurar apuñar aracea araceo arador aralia arameo arauja arawak arañar arcada arcade arcano arcedo ardero ardido ardite arecer arelar arenal arenar arenga areola argano argivo arguir aricar aridez ariete arisco arista armada armado armaos armate armero armese armiño arnica aromar arones arpado arqueo arraez arrapo arrate arrear arreci arriar arriba arribo arrimo arroba arrojo arrope arroto arroyo arruar arruga artejo artera artero artesa arthur artico aruñar arveja asador asalir asalto asayar asceta ascoso aseada aseado asedar asedio aselar asenso aserto asesar asesor ashley asicar asiduo asilar asirio asnado asnico asolar asomar asonar aspear aspero astada astado astato astero astral astuto asueto asumir asunto asurar asusta atabal atacar atacir atadla atadlo atadme atador atajar atalar atalas atales atalos atanor atanos atapar ataque atasco atavio ataxia atañan atañen atañer atañia atelas ateles atelos ateneo atener atenla atenle atenlo atenme atenos atenta atento ateria aterid aterio aterir ateris atesar atetar atezar atibar atifle atinar atipar atizar atleta atocha atojar atolon atomir atonar atonia atorar atorra atraco atraer atraso atrezo atufar aturar atusar audrey augita aulaga aulico aullar aunque aurero aurico auriga aurora austro auyama avadar avahar avalar avance avante avanzo avatar avelar avenar avenir averar averia averio averno avezar avidez avieso avilar aviles avisar avispa avivar avizor avocar axilar axioma ayudar ayudas ayunar azadon azagar azahar azarar azarbe azcona azimut azoato azocar azofar azogar azogue azoico azolar azoleo azomar azorar azotar azotea azoton azteca azucar azuche azufre azular azules azulon azuzar añadir añafea añares añedir añejar añicos añidir añilar añorar añudar babaza babear babera babero baboso bacano bacera baceta bacilo baculo badajo badana badian badila badina bagaje bagazo baguio bahari bailar bailio baipas bajada bajear bajero bajete bajeza bajito bajoca bajuno bajura baladi balago balaje balano balata balate balazo balboa balcon baldar baldeo baldes baldio baldon balear balero balido ballar ballet balsar balteo baltra banaba banana banano bancal bancos bandas baobab baquia baquio baraca baraja baraka barata barato barbar barcal barceo barcia barcos bardar baremo barion barita barloa barman barniz baroto barral barrar barrer barril barrio barron barzal barzon basada bascar basico bastar baston basura batata batato batear batida batido batman batuta baudio bausan bavaro bayeta bayoco bayosa bayuca bañado bañero bebida bebido becada becado beduro bejuco belcho beldad beldar belesa belezo belico benito benjui bentos benzoe benzol beocio beodez berceo berilo berlin berrar berzal berzas besana besico bestia besugo betico betijo bezaar bezoar bezudo biblia biceps bicoca bieldo bielga bielgo bienal bienes bienio bierzo bifido bigamo bigote bikini biliar billar billon bilmar bimano bimbre bingui biombo bipedo birlar birria bisayo bisojo bisoño bistec biyuyo bizcar bizmar blanca blanco blanda blando blason blenda blocao blonda blondo bloque bluson bluyin boalar bobada bobear bobera bobina bocada bocado bocana bocata bocaza bocear bocera boceto bochar bocina bocudo bodega bodigo bodijo bodrio bofena boicot bojear bolaga bolear bolero boleta boleto bolido bolina bolisa bolita bollar bollir bollon bolsas bolson boludo bombas bombon bondad bonete bonico bonina bonita bonito bonizo bonote borato bordar bordon boreal boreas borico borlon borneo borojo borona borrar borren borron boruca borujo bosnio bosque boston botado botana botear botero botica botija botijo botina boveda bovido bovino boxear boyera boyero boyuno boñiga bramar branca brandy brasil bravio brazal brazos brecha bregar breque breton breval brezal brezar breñal briaga briago bribar bribon briega brillo brinco brinza brioso brisca brizar brizna brocal brocha broche brocho broker bromar bromas bronca bronce bronco brotar brozar bruces brujas brujir brumar brusca brusco brutal bruzar bruzos bruñir bubalo bucare bucaro bucear bucero budare budion buenas buenos bufado bufalo bufete bufido buitre bujeda bujedo bujier bulbar bulero buleto bullir bunker burato burdel buriel burlar burlon burujo buscan buscar buscas buscon butaca cabala cabare cabaña cabear cabero cabeza cabezo cabida cabido cabila cabina cabria cabrio cabron cabuya cacear cacera caceta cachar cachas cachon cachua cactus cadena cadera cadete cadmio cadoce caduca caduco cafeto cafila caftan cahita caiman cairel cajera cajero cajeta cajete cajiga cajigo calaba calaca calada calado calaje calamo calcar calces calcio caldeo calera calero calesa caleta caleño calido califa calima calina caliza calizo callao callar calles calmar caloso caluro calvar calvez calzar calzon camada camara camaro camaza cambar cambia cambie cambio cambur camero camiar camilo camina camino camion camisa camita camota camote campal campar campos campus camuza canada canana canape cancel cancer cancha candar candil candor canear caneca caneis canela canelo cangar cangro canica canido canijo canina canino canope canoro canoso cansar canson cantal cantar cantel canton cantor canula canuto caolin capear capeja capela capelo capero capeta capita capona capota capote captar captor caraba carabo caraca carais caraja carajo carapa carate carato carbon carcaj carcel cardal cardar cardon carear careis carena carero caresa careta careto cargar cargos cariar caribe caries cariño carlos carmel carmen carmin carnal carnet carola carolo carota carozo carpir carrie carril carros cartas cartel carter carton casabe casaca casada casado cascar cascos casera casero caseta casete caseto casina casino casita casona caspio castor castra castro casual casuca catana catari cataro catear cateto catibo cation catite cativi catodo catrin caucha caucho caudal causal causar cautin caviar cayada cayado cayena cayote cazabe cazado cañada cañamo cañear cañita cañiza cañizo cañuto cebada cebado cebero cecear cecina cedazo cedizo cedron cedula cefear cefiro cegado cegato cejudo celada celibe celosa celoso celula cemita cendal cendra cenefa cenero ceniza cenizo cenote censal censar censor centon centro cepeda cepita cequia cercar cercas cercen cercos cerdos cereal cerero cereza cerezo cerita cerito cerner cernir ceroma ceroso cerote cerrar cerril cerusa cerval cerviz cesion cesped ceston cesura cetona ceñida ceñido ceñudo chabon chacal chacho chacra chafar chaira chairo chalan chalar chalet chaman chamar chamba champu chanca chance chanda chanfa chanza chaola chapar chapin chaple chapuz chaque charca charco charla charlo charol chasco chasis chaval chayar chazar chelin cheque chiano chicas chicha chiche chicle chicos chifla chifle chigre chiita chilla chillo chinar chinin chinos chirla chirle chirlo chisme chispa chispo chiste chitar chiton chivar chocar chocha chocho choclo chofer cholla chollo choque chorar chorla chorlo chorra chorro chotis chucha chucho chueca chueco chueta chufar chumbo chunga chungo chupar chupon churre churro chusco chusma chutar chuzar cianea cibera ciborg cicero ciclar ciclon cicuta cielos ciento cierne cierra cierre cierta cierto cierva ciervo cierzo cifrar cigala cigoto ciliar cimbel cimbra cimbro cimera cimero cincel cincha cincho cinema cinico cinife cintar cintos cipayo cipote cipres circon cirial ciscar cismar cisura citano citara citola ciudad civeta civico cizaña claire clamar clamor claque clarar clareo clarin claror clases claval clavar clavel claxon cliche climax clipeo cliper clisar cloaca clocar cloche clonar clorar closet clueco cobaya cobayo cobija cobrar coccix cocear coches cocido cocina cocote coctel cocuyo codear codeso codice codigo codina codujo cogido cogote coguil cohete coicoy coitar cojear cojera colada colado colana colcha colear colega colera coleta coleto colgar colica colico colina colino collar colmar colono colori coloso colpar coluro combar combes cometa comico comida comido comino comite comiza comoda comodo compas compon compra compre compro comuna conato concha concho condal condon condor coneja conejo conexa conexo confia confin confio congal congio conica conico coniza connor conoce conoci conque consul contar conteo contra conuco conven convoy cooper copear copeis copela copero copete copiar copias copudo copula coraje coraza corcar corcel corcho cordal cordel cordon corear corion coriza corlar cornea corneo corojo corola corona coroza corozo corpus corral corran correo correr cortar cortes cortex coruña corval cosaco coscar coseno cosido cosmos cospel costal costar costra cotana cotear cotejo cotila cotilo coyote coñear craneo crater creado crecer creeme creido cremar crespo cresta creyer criada criado criais cribar cridar crieis crimen crinar cripta crisis crisma crisol crista cristo croata cromar cruces crujia crujir cruzar cuadra cuadro cuajar cuales cuando cuanta cuanto cuarta cuarto cuarzo cuasar cuatro cubano cubata cubero cubeta cubeto cubica cubico cubito cubrir cucaña cuchar cuelga cuello cuenca cuenco cuenda cuenta cuente cuento cuerda cuerdo cuerna cuerno cuerpo cuerva cuervo cuesco cuesta cuicuy cuidar culada culata culero culmen culote culpar cultor cumano cumbia cumbre cumulo cunchu cundir cunear cunero cuneta cunita cununo cupido cupula curado curato cureña curial curiar currar cursar cursor curtir curvar cutral cutrez cuyaes cuñado dabais dadiva dadles dallar damela damelo damero danico daniel danzar dareis darian darias darlas darles darlos darnos dasela daselo dativa dativo dañado dañino dañoso debajo debido debito decada decaer decano decena deceso decian decias decide decidi decila decile decilo decima decime decimo decios decoro dedalo defiar defuir dehesa deidad deixis dejaba dejada dejado dejala dejalo dejame dejara dejare dejeme delfin delito demela demelo demora dengue denlas denles denlos dennis dennos densar dental dentar denton dentro depone deriva dermis desdad desdan desdar desdas desden desdes desdio desdoy desear deseas desela deselo deseos desfaz deshaz desliz desman desoir desove desuso desvai desvan desvio detene detras detuvo deudas deudor deveni devisa devota devoto dextro dezmar diabla diablo diario dibujo dictar didimo diedro diente dieran dieras dieren dieres dieron diesel diesen dieses dietar diezma diezmo difuso digale digame digito dignar dijera dilema diluir dimela dimelo dinamo dinero dintel dioico dionea dioses diosma dipneo dipolo dirceo direis dirham dirhem dirian dirias dirige discar discos disela diselo diseño disnea dispar dispon distal distar ditero ditono diurno divino divisa dizque doblar dobles doblez doblon docena doceno doceta doctor dolama dolame dolman dolmen dolope dolora doloso domada domino donado doncel donear donoso dopaje dorada dorado dorico dorman dormir dorsal dotada dotado dovela doñear dracma dragar dragea dragon draque drenar driade drogar drogas druida duarte ducado duchar ductil ductor dudoso duende duendo duerme duerna duerno dulces dulero dulzal dulzon dulzor duncan dureza durina durito eccema echada echado echale echame echaos echate echele echese echona ecoico edecan edicto editar editor educar educir edward efecto efesio eficaz efigie efluir efugio ejarbe ejidal electo elegia elegir elenco elevar elidir eligio eligir elijar elipse eliseo elisio elitro elixir elliot elogio eludir emanar embaia embaid embair embais embojo embolo embudo emelga emisor emitir empate empece empero empezo empeño emplea empleo emprar empuje emular enagua enante enatio encaje encima encina encino enciso encono endoso enebro enejar eneldo enfado enfiar engaño enigma enjero enjuta enjuto enlace enojar enorme enoyar enrase enredo enriar ensais ensaye ensayo enseño entada entado enteco entera entere entero entrar entren envase enviar envion envite enzima eoceno eolico eolito epacta epigeo equino equipo eramos erario erecto erguia erguid erguir erguis erigir eringe erizar ermita erogar errada errado errata eructo erutar ervato esbozo escais escajo escala escalo escama escape escapo escara escaro escaso escaño escena escita escoba escoda escota escote escoto escoyo escudo escuna escusa esenio esfera eslavo esleer esleir eslora esmero esmola esmuir esotro espada espais espata espato españa espejo espera espere espero espeso espeto espiar espiga espina espino espira espita espora esposa esposo espray espuma esputo estaba estaca estada estado estafa estais estala estaos estara estare estate estaño esteis estela estelo estema estepa estera estero estese esteta esteva estiba estilo estima estira estivo estofa estola estoma estopa estora estres estria estuco estufa estupa estuve estuvo etanol etario etarra etereo eterno etesio etiope etites etnico etolio eunuco europa evadir evasor evento evitar evocar exacta exacto examen excava exceso excusa exento exigir exiguo eximio eximir existe exorar expiar expone expres exudar exvoto fabada fablar fabril fabula faceta faceto facial facies factor faenar faeton faisan fajado fajero fajina falcar falcon faldar faldon falena falico fallar falsar falseo falsia faltan faltar faluca famosa famoso faneca fanega fangal faquir farala faraon fardar fardel farero farola farota farsar fartar fasces fatico fatiga fauces fausta fausto fautor febril fechar fecula felido felino felipe felpar femina fenice fenico ferial feriar ferino ferodo feroes ferrar ferreo fertil ferula fervor festin feston fetido feudal feudar fiable fiador fianza fiasco fichar fiebre fierro fiesta figura fijado fijate fijeza fileli filete filial filiar filili filloa filmar filosa filoso filtro filudo finado fincar fineta fineza fingir finita finito fintar finura fiofio fiordo firmar fiscal fisgar fisgon fisica fisico fision fisura flanco flauta flecha flegma flejar flemon fletar flojel floral florar floreo flores florin floron flotar flueco fluido fogaje fogata fogoso fogueo folder folgar foliar follar follon fondac fondon fondos fonema fonica fonico forcir forero forjar formal formar formas formol formon fornir forofo forrar forros fortin forzar fosado fradar fragil fragor fragua fraile fraire franco franja frasca frasco fraude frañer fregar fregon freile frejol frenar frente fresal fresar fresca fresco fresno freson fretar frezar friais fricar friega friera frigio frijol frisar frisio frison fritar friura frogar fronda fronde fronte frotar frufru frugal frunce frutal frutar fucsia fuelle fuente fueran fueras fueren fueres fueron fuerte fuerza fuesen fueses fuimos fuiste fulano fulcir fulcro fulero fulgir fulgor fulica fumado fumoso fundar fundir funeño fungir furcia furgon furtar fusado fuscar fusion fustal fustan futbol futesa futsal futura futuro gabata gabela gacela gaceta gafete gajoso galana galano galayo galega galena galeno galeon galera galero galico gallar galleo gallon galopa galope galopo galota galpon gamada gamboa gameto gamuno gamuza ganado gancha gancho gandir gandul ganeta ganoso garaje garbar garcia garete garfio garifo garita garito garlar garrar garrir garron garuan garuar garuen gascon gasear gastar gastos gatada gatear gatera gatero gatuna gatuno gatuña gaucho gavera gaveta gavina gavota gayata gayola gayuba gazapa gazapo gaznar gazuza gañido geiser gelido gemela gemelo gemido gemoso geneal genero genial genico genoma gentil gentio george german germen gestar gestor ghanes giboso gigote gilito girino girola gitano glabro gladio glande glasto glauco global gloria glosar glotis gloton gluten gluteo gnomon gofrar golazo golear goleta golfin goloso golpea golpeo golpes gomera gomero gomina gomita gomoso gonada gordal gordon gorgor gorila gorjal gorjeo gormar gorron gospel gotear gotera gotero gotico gotoso gozoso gozque grabar gracia gracil gradar grados grafia gragea gramar gramil granar grande granel granja granza grapar gratar gratil gratis gravar graves gredal gregal gremio gresca gridar griego grieta grifar grillo gringo gripal griseo grisma gritar griton gritos groera grogui grosor gruesa grueso grujir grulla grullo grupal grupos gruyer gruñir gruñon guacal guache guacho guadal guaira gualda gualdo guampa guando guandu guango guante guarda guarir guarra guarro guasca guayar guayas gueldo guelfo guerra guiado guiais guican guieis guilla guinda guindo guineo guipar guisar guitar guiñar guloso gurbia gurbio gurupa gusano gustan gustar gustas gustos guzman habado habano habeis habian habias habida habido habito hablan hablar hablas hables habran habras habria haceis hacela hacele hacelo haceme hacete hachar hachis hachon hacian hacias hacina hadada hadado hadron hagala hagale hagalo hagame hagase halago halcon halito hallar haloza haluro hamaca hambre hammam hanega hangar hannah harapo harbar harian harias harija harina harold harpia harria harris hartar harvey hastio hataca hatada hatajo hatear hatero hateño hatijo hayaca hayais hayedo hayuco hazana hazaña hazlas hazles hazlos haznos hebreo hechor hechos helada helado helear helena heleno helera helero helice hembra hemina henazo henchi hender hendir henrio herbar hercio hereje herida herido hernia heroes herpil herraj herrar herren herron herver hervir hervor hespir hetera hetica hetico hiante hibleo hicaco hidria hiedra hiemal hierba hierro higado higate hijato hijito hijole hilada hilado hilaza hilera hilero hilvan himpar hincar hincha hinche hincho hinojo hinque hipica hipico hipido hipnal hiposo hippie hirmar hiscal hisopo hispir hitita hitler hobbys hobeño hocete hocico hocino hockey hogaza hogaño hojear hojoso hojudo holear holgar hollar hollin holmes hombre hombro hondon honrar honras hopear horado horcon horrar horreo horror hortal hostal hostia hostil hovero howard hoyada hoyoso huacal huaico huango huasca huebra huelan huelas huelen hueles huelga huelgo huella huemul huerco huerta huerto huesos hueste huevar huevos huiche huidor huilte hujier hulano hulero humana humano humaza humear humeda humedo humera humero humita hummus humoso hundir huraco huraño hurera hurgar hurgon hurona hurtar husada husera husero husita husmar ibamos iberio icario idalio idilio idioma idiota idoneo idumeo ignaro ignavo ignito ignoto iguala iguana ilegal ilirio iludir imagen imanar imbele imbiar imbuir imitar impago impala impetu implar impone impune inciso incoar indica indice indico indigo indios indole inedia inepto inerme inerte infame infero infimo inflar infula infuso ingles inicio inicuo inmune inocuo inopia instar insula intima intimo intuir inutil inviar invito ionico iphone iranio iraqui iremos irgais irguen irgues irguio iriais irideo iridio irisar ironia irrito irruir isabel isleta isleño islote isneño italia iterar jabali jabato jabega jabino jabrir jacara jackie jactar jadear jadiar jaenes jaezar jaguar jaique jalapa jaldre jalear jaleco jalifa jamete jamona jamuga jangua japuta jaquel jaquer jaquir jarabe jaraiz jarana jarano jarbar jarcia jardin jareta jarife jarifo jaroso jarrar jarrer jarron jauria javera jazmin jedive jedrea jenabe jeremy jergon jerife jersey jeruga jetazo jetudo jibaro jicara jicaro jicote jifero jigote jijear jijona jileco jilote jineta jinete jinjol jipiar jirafa jocoso jodida jodido joglar joguer johnny jojoto jolito jonico jonron jopear jordan jornal joroba joropo jorrar joseph jostra jovial joyero joyosa juarda jubada jubete jubilo judgar judiar judios juegan juegas juegos juegue juerga jueves jugaba jugada jugado jugais jugala jugale jugalo jugara jugare jugase juglar jugoso juicio jujear jujeño julepe julian jumera juncal juncar juncia juncir jungla junior juntar juntas juntos jurado jurero justar justin juzgar kaiser kanato kazajo kazako kelvin kermes kibutz kiosco labelo labial labios labrar laburo lacado lacayo lacear lacena lacrar lactar lacteo ladano ladear ladera ladero ladino ladrar ladron lagopo laguna lairen laismo lambda lambel lambeo lamber lamina lamoso lampar lanada lanado lancha lancho landre lanero lanoso lanudo lanzar lapida lapita lapsus lardar largar largas largor larice larije larval lasaña lascar lastar lastre latero latido latigo latino latoso latria latvio laucha laudar laurel lauren lavabo lavada lavado lavajo lavija lazada lazaro lazrar lebrel lebron lechal lechar lechon lector legado legajo legamo legaña legion legrar leismo lejano lemnio leneas lengua leones lepton lercha lerneo lesbio lesion lesivo letame letras leudar levita levosa lexema lexico leñera leñoso libela libelo libico libido librar libras librea libres libros licaon licita licito lictor licuar lidiar liebre liento lienza lienzo lievar lifara ligada ligado ligero ligula limaco limado limaza limera limero limeta limeño limite limoso limpia limpio linaza lindar lindel lineal linear lineas linero lingue linier lintel liones liorna lipido lipoma liquen lirado lirica lirico lisera lisiar lisina listar listas listel liston listos lisura litera litico litina liudar livido llagar llaman llamar llamas llamen llames llanca llande llanta llanto llapar llaves llegan llegar llegas llegue llenar llevan llevar llevas lleven lloica llorar llores lloron llover llueca lluvia loable loador loanda lobada lobado lobano lobato lobear lobera lobero lobina loboso lobulo lobuno locion locuaz loculo locura lodoso logica logico lograr loismo lojano lomada lomear lomera lometa lomudo loncha lonche loneta longar lopeño lorcha loriga loseta losino lotear lotero louise lozano lubina lucano lucera lucero luchar lucida lucido lucion lucrar ludada ludiar ludico ludria luello luenga luengo lugano luismo lujoso lumbar lumbre luneta luneto lunula lupino lupulo luques lustre lutada lutado lutoso lutria mabolo macaca macaco macana macear macelo maceta machar machon macizo macoca macona macuba macuca macuco macula macuto madama madame madeja madera madero madres madura maduro maggie magiar magico magnum maguey magujo mahona maimon mainel maizal majada majano majeza majzen malafa malaga malato malaui malaya malayo maldad malear maleta maleza malina malino mallar maloca maloja malojo malsin maltes maluco malvar malvis malviz mambla mameis mamera mamila mamola mamoso mamuts manada manati manato mancar mancha manchu mandar mandil mandra manear manejo manera manero maneta maneto manfla mangar mangla mangle manian manias manida manido manija manila manilo manira manire manita manito manjar manojo manola manolo mantel manten manteo mantis manton manual mapale mapear maraca maraña marcar marcas marceo marcha marcio marcir marcus mardal marear marero mareta marfil margal margar margen marica marido marina marino marjal marmol marojo marola maroma marrar marron martes martha martin martir maruja marzal marzas masada masaje mascar masera masico masilo masita masivo masora mastel master mastil mastin matada matado matara matare matear matero matico matine matojo matraz matriz matula matute maular mauser maxima maxime maximo mayear mayeto mayido mazana maznar mañana mañear mañera mañero mañoso meauca mecano mecate mecato mechar mechon medano medial mediar medias medica medico medida medina medios medium medrar medula medusa meguez mehala meitad mejido mejora melado melaza meldar melena meleno melero melgar melino melito mellar meloja melojo meloso melote memela menade menaje mendaz menear mengua mengue menhir menina menino mental mentar mentes mentir mentis mentol menton mentor menudo menuza menuzo meollo mercal mercar merced merece mereis merino merito merlin mermar mesana mesero meseta mesias mesita mestal mesuno mesura metano metate meteco metido metilo metodo metopa metros mexica mexico mezcal mezcla miagar miasma miañar micado mickey mielga mielgo mielsa miente mierda mierla mierra mieses migaja migrar miguel mihrab mijero milano mildiu mileno miliar millar millas miller millon miloca milord mimado mimbre mimica mimico mimosa mimoso minado minera minero miniar minimo minina minino mintio minuta minuto miopia miosis miquis miraba mirada mirado miralo mirame mirate mirlar misero mision misivo mismas mismos misses mistar mister mitayo mitico mitote mitral mitrar moblar mocear mocero mocete mochar mochil mocion mocito mocoso modelo modico modoso modulo mofeta moflir mogate mogato mogote mohada moheda moheño mohina mohino mohoso moises mojada mojado mojama mojera mojete mojina moldar moldeo molero moleta molido molino mollar mollir moloso momear momero monada monago mondar monear moneda mongol monjil monona monote montar montea montes monton monzon morada morado moraga morago morato moravo morcar morcon mordaz morder moreda morena moreno morera morfea morgan morgue morira morito morles mormon morojo morosa moroso morral morreo morron mortal moruno moruro morusa moscar moscon motear motero motete motivo motriz movido moyana moñudo mucamo muceta muchas muchos mucosa mucoso mueble muecin muelar muelle mueren muergo muermo muerta muerte muerto muesca muevas muflir mugido mugron muguet muisca mujada mulada mulata mulato mulero muleta muleto mullir multar mundos muquir murceo murena murete murice murtal musica musico musivo muslim mustio mutual muñeca muñeco nababo nababs nabato nabina nabiza nacela nacido nacion nafrar nagual nailon nalgar nancer nanear nanita nantar napelo napias narrar narria narval nascer nasudo nathan nativo natral natron natura nausea navaja navajo navazo naveta nayade nazari nearca nebeda necear necora nectar negada negado negral negror negros nelson nepali nepote nerita nervio nesgar neural neutro nevada nevado nevazo nevera nevero nevoso newton niceno nidada nidrio niebla nielar nigola niluno nimbar ninfea ningun niobio niquel nitido nitrar niñato niñear niñera niñero nocaut noceda noches nocion nocivo nodulo nogada nomada nomade nombre nomina nonada nonato nonius normal norman normas notado novato novela novena noveno noviar nublar nuboso nucleo nudoso nudrir nuevas nuevos numero nuncio nutria nutrir nutriz obispo objeto oblada oblata oblato obrada obraje obrero obseso obstan obstar obsten obtuso obviar occiso oceano ochavo ocioso ocluir ocluso octano octavo octeto ocular oculto ocupar ocurra ocurre odiaba odiame odioso odisea ofensa oferta oficio ofidio ofrece ohmico oibano oidlas oidles oidlos oidnos oigala oigalo oigame ojalar ojanco ojival ojoche okupar oleado oleaje oleaza oledla oledlo oledor oleico olelas oleles olelos olenos oleoso olerla olerle olerlo olerme oleros olerse olerte olfato olivar oliver olivia ollado ollera ollero olmeca olmeda olmedo olvida olvide olvido omagua omanes omento ominar omitir onagro oncear oncejo ondear ondina ondoso ondrar onecer onique opacar opcion operar opilar opinar opinas oponer optico optimo orador orante orario orbita ordeno ordeña ordeño orejas orejon orense orfeon organo origen orilla orinal orinar ormino ornato ornear orondo oropel orozuz ortega ortiga ortosa orzaga osadia osario osculo oscura oscuro osezno ostaga ostras ostron ostugo otilar otitis otoñal otoñar otrora otrosi ovalar ovante ovario overol ovillo ovoide ovular oxidar oxiuro oyelas oyeles oyelos oyenos oyente pabilo pabulo pacais pacana pacato paceño pachon pactar padres padron paeces paella paence pagada pagado pagano pagare pagaya pagina pagoda paipay pairar paises pajaro pajaza pajear pajera pajero pajizo pajoso pajuzo palada palado paleal palear palera palero paleta paleto paliar palida palido palier palito paliza pallar palmar paloma palomo palote palpar pamela pamema panada panado panama pancho pandar pandeo panela panera panero pangue panico panizo panoja panoli panoso panque panudo papada papado paparo papaya papayo papear papera papero papila papiro parada parado paraje paramo parata parche parcir pardal parear parece pareja parejo paresa parias parida parker parlar parola parpar parque parral parrar parras partes partil partir pasaba pasada pasado pasara pascal pascua pasear pasion pasito pasiva pasivo pasmar pasote pastar pastel paston pastor pataca pataco patada patata patear patena patera patero pateta patina patojo patoso patota patria patrio patron patuco patudo paular pausar pautar pavada pavana pavero pavesa pavura payaso pazote pañero pañete peaton pebete pecado pecera pecero pechar pechos pecina pecoso pectar pedazo pedido pedire pedrea pedres pegada pegado pegata pegote peinar peines pejino pelada pelado pelaza pelear peleas pelele peleon pelete pelgar pellon pelosa peloso pelota pelote peloto peltre peluca peludo pelusa pelvis penado pender pendil pendon peneca penoso pensar peonia peonio peonza peorar peores peoria pepino pepita pepona percal percha perder perdio perdiz perdon pereda pereta pereza perfil perico perine perito perlar pernil pernio perojo perola perone perros pesada pesado pesame pescar peseta pesgar pesiar pesimo pesuña petaca petalo petate petera petrel petreo peyote pezuña peñazo peñero piache piador piafar pialar piante picada picado picana picaro pichar pichel pichoa pichon picnic picola picosa picoso picota picote picuda picudo piedad piedra pielga piensa piense pienso pierde pierdo pierio pierna piezas piezgo pifano pifiar pigmeo pijama pijota pijote pileta pililo pillar piloro piloso pilote piloto pilpil piltra piltro pimpon pinada pinado pinato pinaza pincel pinche pincho pineda pingar pingue pinito pinjar pinole pinrel pintar pintor pinuca pinula pinzar pinzon piocha piolar piorno pipeta pipiar pipita pipote piquin pirata piraña pircar pirita piropo pirrar piruja pirujo pirulo pisada pisado pisano piscis pispar pistar pistas piston pitaco pitada pitera pitido pitora pitpit pitreo pitusa pituso piujar piular pivote piyama pizate pizcar pizote piñata placar placer plafon plagal plagar planco planes planga planta plasma plasta plaste platea platon platos plauso plañir plegar pleita pleito pleura pliego plinto plisar plomar plomos plorar ploter plumin plumon plural pobeda poblar pobres pocero pocima pocion podada podais podeis podian podias podido podium podran podras podria podrir poesia poetar polaca polaco polcar polera polipo poliza pollas pololo poluta poluto pomada pomelo pompon pomulo ponche poncho poncil pondra pondre pongan pongas pontin ponton poquer porcal porcel porche porfia porgar poroso poroto porque porron portal portar porton posada posado poseer poseso posito pospon postal postar poster postin postor postre potala potasa potero potosi potril povisa poyata pozole prasio prasma praxis precio precoz predar predio pregar pregon premia premio premir prenda prensa prepon presar presea presta preste presto pretal pretil pretor preven prever previo preñar preñez priado priego priesa prieto primal primar primer primor primus priora priori prisco prisma priste privar probar procaz procer proeza progne pronto propia propio propon proteo protio proton proven prueba psique pubico puches pudica pudico pudrir puebla pueblo puedan puedas pueden puedes puente puerca puerco pueril puerro puerta puerto puesta puesto pugnar pugnaz pujame pulcro pulgar pulgon pulido pulles pulmon pulque pulsar pumita pungir punico puntal puntar puntos punzar punzon pupila pupilo puposo purana purear pureza purgar purrir putada putear putero puyazo puñada puñado puñete queche quedan quedar quedas quedes quejar quemar quepan quepas quepis querer queria querra querub queule quiaca quibey quiche quicio quiera quiere quiero quieta quieto quijal quijar quilla quimio quinao quince quinta quinto quinua quique quirie quisca quisco quiste quitar quiton quizas quiñar rabada rabano rabear rabera rabiar rabida rabido rabino rabion rabiza raboso rabudo rabula rachar rachel racial racimo racion racord radial radian radiar rafaga rafear raigar rajada rajado rajeta ralbar ralear raleza rallar rambla ramera ramero ramina ramito ramiza ramojo ramoso rampar ramuja ramujo rancar rancho rancio rancor ranina ranula ranura rapada rapado rapaza rapero rapida rapido rapiña raposa raposo raptar raptor raquis rarear rareza rascar rascle rascon rasera rasero rasete rasgar rasgon raspar raspon rastra rastro ratear ratero ratito raudal rayada rayado rayano rayero rayoso reacio reales reamar rearar reatar rebaba rebato rebeca rebeco reblar rebojo rebozo recado recaer recela recelo receso receta recibe recibi recibo recien record recreo rectal rectar rector redada redaya redera redero redito redova redrar refajo reflex refran regala regalo regate regato regazo regaño regido region reglar reglas reglon regona regulo rehace rehala rehuir reidor reilar reinar reitre rejada rejado rejero relato releer releje relevo relvar remate remedo remero remiso remite remora remoto rencor rendar render rendir rengar rengle rentar rentoy repapo reparo repelo repipi repito repone reptar reptil resali reseco resina resoli restar restos retama retazo retene retico retiro retoño reunir reveni revezo reyuno rezado rezago rezura reñido riacho ribazo ribera ribero ribete ribosa ricial ricino rictus ricura rielar rienda riendo riesgo rigido rijoso rimero rincon ringar ringla ringle ripiao ripiar risada riscal riscar ristra ristre ritmar ritual rivera rizado rizoma rizoso roatan robada robado robalo robeco robert robezo roblar robrar rocada rocero rochar rociar rocino rococo rocoso rodada rodado rodaja rodaje rodear rodela rodeno rodera rodero rodete roedor rogado rojear rojete rojeto rojizo rojura roldar rollar romana romani romano romaza rombal romero romper rompio roncal roncar roncha roncon rondar rondis rondiz rondon ronzal ronzar ropaje ropero ropeta roques rosado rosbif roscar roscon rosear roseta rosoli rostir rostro rotoso rotula rotulo rotura royega rozado roznar ruante rubeta rubial rubiel rubion ruchar rucula rudeza ruedas ruello ruezno rufeta rufian rugido rugoso ruinar rujiar rulero ruleta rumano rumbar rumiar runcho rundel runico runrun rustir ruteno rutilo rutina sabado sabalo sabana sabaya sabeis sabela sabian sabias sabida sabido sabila sabino saboga sabras sabria sabuco sabugo sacada sacado sachar saciar sadico saetar saetia safari safena sagita sahina sainar sajada salada salado salami saldar saldra salear salema salera salero salesa saleta salgan salgar salgas salico salida salido salina salino saliva sallar salmar salmer salmon saltar saludo salute salvar salvia samuel samuga samugo samuro sancho sancta sandez sandia sandio sanear sangre sanjar sanson santon santos sapina sapino sapote saqueo sarama sarape sarasa sarazo sarcia sardio sardon sargal sarria sarrio sartal sarten sastre satira satiro sativa saurio sayama sayugo sañudo seamos sebado sebiya seboro seboso secado secano seceso secoya sector secuaz secura sedear sedera sedero sedeña sedeño sedoso segada seglar segote seguia seguir segura seguro seismo sellar semana semeja semita semola senada senado sendos seneca senior sensor sentar sentia sentir senton sepalo sequia serado seraje serano serbal serbio sereis serena sereno serete serial serian seriar serias serijo serlas serles serlos sermon sernos serosa seroso serpol serrar serrin servar servil servio servir sesada sesamo sesear sesena sesera sesgar sesion sestar sesudo setero severo sexado sextil sexual señora siames sibila siendo sienes sienta siente siento sierpe sierra siervo siesta sigilo siglos signar signos siguen sigues siguio silaba silbar silero silgar silice sillar sillin sillon siluro simado simple sincro sinfin singar sinoca sinodo sintio sirena sirgar siroco sirope sirria sisear sisero sitial sitiar sitios situar soasar sobaco sobado sobejo sobrar sobrio social socios sodica sodico sofion sofoco solais solana solano solapa soldar solear solera solero soleta solfeo solian solias solido solita solito solivo sollar solomo soltar soluto solver somali sombra somera somero somier sonada sonado sonaja sonata sondar sondeo soneto sonico sonido sonora sonoro sonrie sopapo sopear sopero sophie soplar soplon sorber sorche sornar sorteo sosera sosero sosias sosten sotana sotano sotera sotuer soviet stands steven street suadir suarda subito subven suceda sucede suceso sucoso sudoku sudoso suegra suegro suelan suelas suelda sueldo suelen sueles suelta suelto suerte sueste sueter sueños sufijo suflar sufrir sujeto sulcar sultan sumaca sumisa sumiso sunami supero supino suplir supone surcar surcir surdir sureño surgir surtir susano sutano sutura tabaco tabano tabina tablar tablon tabuco tacada tacaño taceta tachar tachon tacita tacito tactil tagalo tahali tahona taimar tajada tajado tajero talamo talaya talega talego talero tallar taller talque tamara tamaño tambor tambre tameño tamojo tampon tamuja tamujo tanate tancar tandem tangar tangir tangon tanino tanque tantas tanteo tantos tapada tapado taparo tapate tapera tapete tapial tapiar tapido tapsia tapujo tarafe taraje tarara tarari tarasa tarbea tardar tardes tardio tareas tareco tarhui tarifa tarima tarjar taruga tarugo tarusa tasajo tascar tastar tastaz tasugo tatuar taucar tauteo tayiko taylor tañido teatro tebano techar tedero tedeum tediar teflon tegual tejado tejano tejera tejero tejida tejido telele telera telero teleta telina telliz temoso templa temple templo tenace tenada tenaza tendal tendel tender tendon tendra tendre teneis tengan tengas tenian tenias tenida tenido tensar tenson tensor tentar tenuno tenuta teoria tepalo terbio tercer tercia tercio teresa terete terliz termal termas termes termia terral terreo terron terror tersar tesalo tesela tesina tesoro testar testuz tesura tetera tetero tetona tetuda teucro teuton texano textil teñido thomas tibiar tictac tiempo tienda tienen tienes tienta tiento tierno tierra tiesto tifico tijera tildar tillar timbal timboy timbre timido tinaco tinada tinado tinaja tincar tinelo tingle tinola tintar tioneo tipejo tipico tipula tiquis tirada tirado tiraje tirajo tirano tirela tireta tirona tirria tirulo tisana tisera tisico titear titere titulo tiuque tizana tiznar tizona toalla tobaja tobera toboba toboso tocada tocado tocano tocata tocayo tocino tofana togado toison tojino tolano toldar tolena tolete toller tollir tomada tomado tomalo tomara tomare tomate tomaza tomiza tonada tondiz tonero tonica tonico tonina tontos topear topera topico topino toques torada torcal torcaz torcer torcho torear torera torero torete toreño torito tornar torneo toroso torrar torsor tortas tortor toruno torzal torzon tosigo tostar toston totora totuma totumo toxico toxina tozudo trabal trabar trabon tracio tracto traeme traere tragar tragaz tragon traida traido traiga traigo traina traite traiña trajes trajin tralla tramar trampa tranca trance tranco trapea trapee trapeo traque trasga trasgo traste trasto trasve tratan tratar tratas trauma traves travis trazar trebol trecen trecha trecho tregua tremar tremer tremes tremol trenca trente trenza trepar trezna triaca triada tribal triduo trigal trigla trilla trillo trinar trinca trineo triple trique trisar trismo triste tritio triton trivio trizar trocar trocha trocir trocla trofeo trolla tromba trombo trompa trompo tronar tronca tronco tronga tropas tropel troque trosas trotar troupe trovar trozar trucar trucha trucho trucos trueno trufar truhan trujal trulla trumao truque tuareg tuerca tuerce tuerta tuerto tueste tuiteo tulipa tullir tumbar tumbon tumulo tundir tundra tunear tuneci tunera tunero tunica tupaya tupido tupies turbar turbia turbio turbit turbon turnar turnio turqui turrar turron tutano tutear tutela ubicar ubicuo ubrera ufanar ufania ulcera ulluco ultima ultimo ulular umbela umbral umbria umbrio unalas unalbo unales unalos unanla unanle unanlo unanse unario uncion undoso unense ungido unguis unicos unidad unidla unidle unidlo unidme unidor unidos unilas uniles unilos uninos untada untala untale untalo untame untaos untate untaza untela untelo untese untoso untura uranio urbana urbano uremia urente ureter uretra urpila urraca ursina usadla usadle usadlo usadme usagre usalas usales usalos usamos usando usanos usanza usarlo uselas useles uselos usenla usenle usenlo usenme usenos usense uslero ustaga usurar utopia utrera uvaduz uveral uvular uzbeco uzbeko vacceo vaciar vacuna vacuno vadear vadera vagido vagina vahear vahido vaiven valido valija vallar valona valsar valuar valvar vanear varada varado varazo varear vareta variar varias varios varita vascon vasera vasija vasito vayais vayase veamos vecera vecero vecina vecino vector vedado vedeja vedete vedija veedor vegano veguno veinte vejeta vejete vejiga velada velado velcro velero veleta velete veleño vellon velmez venado venaje vencer vendar vender vendio vendra veneno venera vengan vengar vengas venial venida venido venoso ventar ventas ventor verano verato verbal verdad verdal verdeo verdes verdin verdor vereda vergel verija verlos vernal vernos versal versar versta versus verter vesque vestal vestir vetear viable viajar viajes vianda viaria viario vibora vibrar vichar viciar victor vicuña vidrio vidual vieira viejas viejos viendo vienen vienes viento vieron vigiar vigila vigota vijeño vilano vilera vileza vimbre vinaza vinico vinilo vinoso vinote violar violin virada virado virago viraje virgen virico virola virolo virote virrey virtud viruta visear visera vision visita visual visura vitela vitelo vitola vitral vitreo viudal viudez vivero viveza vivido viñedo viñeta vocear vocero volcan volcar volear volteo voltio voluta volver volvio vomica vomico vomito vosear votada voznar vuelco vuelta vuelto vuelva vuelve vuelvo vulgar vusted walker walter warren watson webers whisky willie wilson xilema yabuna yacija yacusi yaguar yanqui yantar yatais yeguar yemeni yergan yergas yergue yermar yerran yerras yerren yerres yesera yesero yesoso yeyuno yibuti yodado yoquey yoruba yudoca yugada yunque yuntar yuruma yusera yusero zacate zacear zafari zafiro zagual zaguan zahena zahina zahori zajari zalama zalear zalema zallar zambes zambio zamboa zambra zampar zamuro zanate zanjar zanjon zapata zapato zapear zapote zarajo zarazo zarina zarpar zarria zarrio zarzal zatara zatico zelote zeugma zigoto zigzag ziszas zocalo zocato zonote zopisa zorito zorzal zoster zullar zumbar zumbel zumbon zumoso zuncho zurano zurcir zurdir zurear zurita zurito zuriza zurrar zurria zurrir zurron zutano ñangue ñublar";
+
+/* ============================================================================
+   WORDLE — Cortadito daily game.  Shared engine + game logic.
+   ============================================================================ */
+
+/* ---- per-game config ---- */
+const GAME          = 'cortadito-wordle';
+const GAME_NAME     = 'Wordle';
+const TAGLINE       = '¿Cuál es la palabra de hoy?';
+const MAESTRO_NOUN  = 'DÍA';
+const NEWSLETTER_URL= 'https://cortadito.news';
+const RANK_NAMES = ['Debutante','Eficiente','Constante','Diligente','Admirable',
+                    'Excelente','Increíble','Brillante','Eminente','Maestro/a'];
+const RANK_THRESHOLDS = [0, 10, 22, 35, 48, 60, 72, 84, 94, 100];
+const RETO_MIN = 55, RETO_MAX = 80;     // daily target window (step 5)
+
+const WORD_LEN = 6, MAX_ROWS = 6;
+const SOLVE_BONUS = {1:60, 2:45, 3:32, 4:22, 5:14, 6:8};
+const PT_CORRECT = 5, PT_PRESENT = 2, LIMPIO_BONUS = 20;
+
+/* ---- localStorage guard ---- */
+const LS = (function () {
+  try { window.localStorage.setItem('__t','1'); window.localStorage.removeItem('__t'); return window.localStorage; }
+  catch (e) { const m = {}; return { getItem:k => (k in m ? m[k] : null), setItem:(k,v)=>{m[k]=String(v);}, removeItem:k=>{delete m[k];} }; }
+})();
+
+/* ---- valid-guess set ---- */
+const VALID = new Set(VALID_STR.split(' '));
+
+/* ---- date helpers ---- */
+function isoOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function todayISO(){ return isoOf(new Date()); }
+function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
+function longDate(iso){ try{ const d=new Date(iso+'T12:00:00');
+  return `${cap(d.toLocaleDateString('es-ES',{weekday:'long'}))}, ${d.getDate()} de ${d.toLocaleDateString('es-ES',{month:'long'})} de ${d.getFullYear()}`;
+}catch(e){ return iso; } }
+function prettyDate(iso){ try{ const d=new Date(iso+'T12:00:00');
+  return `${d.getDate()} ${cap(d.toLocaleDateString('es-ES',{month:'long'}))} ${d.getFullYear()}`;
+}catch(e){ return iso; } }
+
+/* ---- FNV-1a hash of the date digits ---- */
+function fnv(iso){ const s=iso.replace(/-/g,''); let h=2166136261;
+  for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; } return h; }
+function mix(h){ h^=h>>>15; h=Math.imul(h,2246822519)>>>0; h^=h>>>13; return h>>>0; }
+
+/* ---- Reto del día & daily word (avalanche-mixed: even spread, no parity bias) ---- */
+function retoForDate(iso){ const buckets=((RETO_MAX-RETO_MIN)/5)+1; return RETO_MIN + (mix(fnv('r'+iso))%buckets)*5; }
+function wordForDate(iso){ return SOLUTIONS[mix(fnv('w'+iso))%SOLUTIONS.length]; }
+
+/* ---- rank helpers ---- */
+function rankIndex(s){ let idx=0; for(let i=0;i<RANK_THRESHOLDS.length;i++){ if(s>=RANK_THRESHOLDS[i]) idx=i; } return idx; }
+const TOP = RANK_NAMES.length - 1;
+const MAX_THRESH = RANK_THRESHOLDS[TOP];
+
+/* ---- which day are we playing (today, or an archive day via #hash) ---- */
+function pickISO(){
+  const h = (location.hash||'').replace('#','');
+  if (/^\d{4}-\d{2}-\d{2}$/.test(h)) {
+    const today = new Date(todayISO()+'T12:00:00');
+    const that  = new Date(h+'T12:00:00');
+    const diff  = Math.round((today - that)/86400000);
+    if (diff >= 0 && diff <= 6) return h;
+  }
+  return todayISO();
+}
+
+/* ============================ STATE ============================ */
+let ISO    = pickISO();
+let RETO   = retoForDate(ISO);
+let ANSWER = wordForDate(ISO);
+let guesses = [];           // array of submitted guess strings
+let curGuess = '';          // current typed row
+let score  = 0;
+let solved = false, finished = false;
+let busy = false;           // animating
+
+/* board+keyboard state derived on each evaluation */
+let keyState = {};          // letter -> best state
+
+/* ---- Wordle evaluation with duplicate handling ---- */
+function evaluate(guess, answer){
+  const res = new Array(WORD_LEN).fill('absent');
+  const a = answer.split('');
+  const counts = {};
+  for (const ch of a) counts[ch] = (counts[ch]||0)+1;
+  for (let i=0;i<WORD_LEN;i++){ if (guess[i]===a[i]){ res[i]='correct'; counts[guess[i]]--; } }
+  for (let i=0;i<WORD_LEN;i++){
+    if (res[i]==='correct') continue;
+    const ch=guess[i];
+    if (counts[ch]>0){ res[i]='present'; counts[ch]--; }
+  }
+  return res;
+}
+
+/* ---- recompute everything from the list of guesses (single source of truth) ---- */
+function recompute(){
+  score = 0; solved = false; keyState = {};
+  const greenPos = new Set();   // positions already scored green
+  const presentLetters = new Set(); // letters already scored present
+  let clean = true;
+  for (let r=0;r<guesses.length;r++){
+    const g = guesses[r];
+    const ev = evaluate(g, ANSWER);
+    for (let i=0;i<WORD_LEN;i++){
+      const ch=g[i], st=ev[i];
+      // letter scoring (first discovery only)
+      if (st==='correct' && !greenPos.has(i)){ greenPos.add(i); score += PT_CORRECT; }
+      else if (st==='present' && !presentLetters.has(ch)){ presentLetters.add(ch); score += PT_PRESENT; }
+      if (st==='absent') clean = false;
+      // keyboard best-state (correct > present > absent)
+      const rank = {correct:3, present:2, absent:1};
+      if (!keyState[ch] || rank[st] > rank[keyState[ch]]) keyState[ch] = st;
+    }
+    if (g === ANSWER){
+      solved = true;
+      score += (SOLVE_BONUS[r+1] || 0);
+      if (clean) score += LIMPIO_BONUS;
+      break;
+    }
+  }
+  finished = solved || guesses.length >= MAX_ROWS;
+  return { clean };
+}
+
+/* ============================ RENDER ============================ */
+function buildBoard(){
+  const b = document.getElementById('board');
+  b.innerHTML = '';
+  for (let r=0;r<MAX_ROWS;r++){
+    const row = document.createElement('div'); row.className='brow'; row.dataset.row=r;
+    for (let c=0;c<WORD_LEN;c++){
+      const t = document.createElement('div'); t.className='tile'; t.dataset.col=c;
+      row.appendChild(t);
+    }
+    b.appendChild(row);
+  }
+}
+function paintRow(r, guess, ev, animate){
+  const row = document.querySelector(`.brow[data-row="${r}"]`);
+  if (!row) return;
+  [...row.children].forEach((t,i)=>{
+    t.textContent = guess[i].toUpperCase();
+    const apply = () => { t.classList.remove('filled'); t.classList.add(ev[i]); };
+    if (animate){
+      setTimeout(()=>{ t.classList.add('reveal'); setTimeout(apply, 250); }, i*180);
+    } else { apply(); }
+  });
+}
+function renderBoardState(){
+  // committed guesses
+  for (let r=0;r<guesses.length;r++){
+    paintRow(r, guesses[r], evaluate(guesses[r], ANSWER), false);
+  }
+  // current typed row
+  if (!finished){
+    const row = document.querySelector(`.brow[data-row="${guesses.length}"]`);
+    if (row){ [...row.children].forEach((t,i)=>{
+      t.textContent = curGuess[i] ? curGuess[i].toUpperCase() : '';
+      t.className = 'tile' + (curGuess[i] ? ' filled' : '');
+    }); }
+  }
+}
+const KEYS = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l','ñ'],
+  ['enter','z','x','c','v','b','n','m','del']
+];
+function buildKeyboard(){
+  const kb = document.getElementById('keyboard'); kb.innerHTML='';
+  KEYS.forEach(rowKeys=>{
+    const row=document.createElement('div'); row.className='krow';
+    rowKeys.forEach(k=>{
+      const key=document.createElement('button'); key.className='key';
+      key.dataset.key=k;
+      if (k==='enter'){ key.classList.add('wide'); key.textContent='Enviar'; }
+      else if (k==='del'){ key.classList.add('wide'); key.textContent='Borrar'; }
+      else key.textContent=k;
+      key.addEventListener('click', ()=>handleKey(k));
+      row.appendChild(key);
+    });
+    kb.appendChild(row);
+  });
+}
+function renderKeyboard(){
+  document.querySelectorAll('.key').forEach(key=>{
+    const k=key.dataset.key;
+    if (k==='enter'||k==='del') return;
+    key.classList.remove('correct','present','absent');
+    if (keyState[k]) key.classList.add(keyState[k]);
+  });
+}
+
+/* ---- rank bar ---- */
+function renderRank(){
+  const track=document.getElementById('rank-track');
+  track.querySelectorAll('.rank-dot, .rank-marker').forEach(n=>n.remove());
+  const curIdx=rankIndex(score); const done=score>=RETO;
+  RANK_THRESHOLDS.forEach((th,i)=>{
+    const pct=Math.max(0,Math.min(100,(th/MAX_THRESH)*100));
+    const dot=document.createElement('div'); dot.className='rank-dot';
+    if(i===curIdx){ dot.classList.add('current'); if(done)dot.classList.add('done'); if(curIdx===TOP)dot.classList.add('at-maestro'); dot.textContent=score; }
+    else if(i<curIdx){ dot.classList.add('passed'); }
+    dot.style.left=(i===TOP&&i===curIdx)?'calc(100% - 12px)':pct+'%';
+    track.appendChild(dot);
+  });
+  const mk=document.createElement('div'); mk.className='rank-marker'+(done?' done':'');
+  mk.style.left=Math.min(100,(RETO/MAX_THRESH)*100)+'%'; track.appendChild(mk);
+  const lbl=document.getElementById('rank-label');
+  lbl.textContent=RANK_NAMES[curIdx]; lbl.classList.toggle('at-maestro', curIdx===TOP);
+  const st=document.getElementById('stat-today'); if(st) st.textContent=`${score} pts · ${RANK_NAMES[curIdx]}`;
+}
+function renderRangos(){
+  document.getElementById('rangos-reto').textContent = `El Reto de hoy es ${RETO} pts.`;
+  const box=document.getElementById('rangos-list'); const curIdx=rankIndex(score);
+  box.innerHTML=RANK_NAMES.map((n,i)=>{
+    const cls='rank-row'+(i===curIdx?' current':'')+(i===TOP?' is-top':'');
+    return `<div class="${cls}"><span class="name">${n}</span><span class="score">${RANK_THRESHOLDS[i]} pts</span></div>`;
+  }).join('');
+}
+
+/* ============================ STATS (lifetime) ============================ */
+function getStats(){
+  try { return JSON.parse(LS.getItem(`${GAME}-stats`)) || {played:0,wins:0,cur:0,max:0,dist:[0,0,0,0,0,0],last:null}; }
+  catch(e){ return {played:0,wins:0,cur:0,max:0,dist:[0,0,0,0,0,0],last:null}; }
+}
+function recordStats(){
+  // only count a finished TODAY game once
+  if (ISO !== todayISO()) return;
+  if (LS.getItem(`${GAME}-counted-${ISO}`)) return;
+  if (!finished) return;
+  LS.setItem(`${GAME}-counted-${ISO}`,'1');
+  const s = getStats();
+  s.played++;
+  if (solved){
+    s.wins++;
+    s.dist[guesses.length-1] = (s.dist[guesses.length-1]||0)+1;
+    // streak: consecutive solved days
+    const y = new Date(ISO+'T12:00:00'); y.setDate(y.getDate()-1);
+    s.cur = (s.last === isoOf(y)) ? s.cur+1 : 1;
+    s.max = Math.max(s.max, s.cur);
+  } else { s.cur = 0; }
+  s.last = ISO;
+  LS.setItem(`${GAME}-stats`, JSON.stringify(s));
+}
+function renderStats(){
+  const s=getStats();
+  const pct = s.played ? Math.round((s.wins/s.played)*100) : 0;
+  document.getElementById('stat-grid').innerHTML = `
+    <div class="stat-cell"><div class="n">${s.played}</div><div class="l">Jugadas</div></div>
+    <div class="stat-cell"><div class="n">${pct}%</div><div class="l">Victorias</div></div>
+    <div class="stat-cell"><div class="n">${s.cur}</div><div class="l">Racha</div></div>
+    <div class="stat-cell"><div class="n">${s.max}</div><div class="l">Mejor</div></div>`;
+  const maxd = Math.max(1, ...s.dist);
+  const todayRow = solved ? guesses.length : -1;
+  document.getElementById('dist-box').innerHTML = s.dist.map((v,i)=>{
+    const w = Math.round((v/maxd)*100);
+    return `<div class="dist-row"><span class="k">${i+1}</span>
+      <div class="dist-bar ${i+1===todayRow?'hot':''}" style="width:${Math.max(8,w)}%">${v}</div></div>`;
+  }).join('');
+}
+
+/* ============================ SHARE ============================ */
+function emojiGrid(){
+  return guesses.map(g=>{
+    const ev=evaluate(g,ANSWER);
+    return ev.map(s=> s==='correct'?'🟩' : s==='present'?'🟪' : '⬛').join('');
+  }).join('\n');
+}
+function buildShareText(){
+  const idx=rankIndex(score); const isMaestro=idx===TOP;
+  const { clean } = recompute();  // refresh clean flag
+  const L=[];
+  L.push(`${GAME_NAME} · ${prettyDate(ISO)}`);
+  L.push('');
+  if (!finished){
+    L.push('⏳ Todavía sin terminar');
+    L.push(`🎯 Reto del día: ${RETO} pts`);
+    L.push(''); L.push(NEWSLETTER_URL); return L.join('\n');
+  }
+  L.push(`${solved ? guesses.length : 'X'}/${MAX_ROWS}`);
+  L.push(emojiGrid());
+  L.push('');
+  if (isMaestro){ L.push(`👑 ¡MAESTRO/A DEL ${MAESTRO_NOUN}!`); L.push(''); }
+  if (score>=RETO){ const over=score-RETO; L.push('✅ ¡Reto del día logrado!'); L.push(`   ${score} / ${RETO} pts${over>0?'  (+'+over+')':''}`); }
+  else { const gap=RETO-score; L.push('📌 Reto del día'); L.push(`   ${score} / ${RETO} pts${gap>0?'  (−'+gap+')':''}`); }
+  if (solved && clean) L.push('✨ ¡Limpio! Sin casillas grises');
+  if (!isMaestro) L.push(`🏆 Rango: ${RANK_NAMES[idx]}`);
+  L.push(''); L.push(NEWSLETTER_URL);
+  return L.join('\n');
+}
+async function doShare(){
+  const text=buildShareText();
+  if (navigator.share){ try{ await navigator.share({text}); }catch(e){} return; }
+  try{ await navigator.clipboard.writeText(text); flash('Copiado','success'); }
+  catch(e){ prompt('Copia tu resultado:', text); }
+}
+
+/* ============================ FEEDBACK + CELEBRATION ============================ */
+function flash(text, kind){
+  const fb=document.getElementById('word-feedback'); if(!fb) return;
+  fb.textContent=text; fb.className='word-feedback '+(kind||'')+' show';
+  clearTimeout(fb._t); fb._t=setTimeout(()=>{ fb.className='word-feedback'; }, 1400);
+}
+function maybeCelebrate(prevScore){
+  const goalKey=`${GAME}-goal-shown-${ISO}`, maesKey=`${GAME}-maestro-shown-${ISO}`;
+  if (prevScore<RETO && score>=RETO && !LS.getItem(goalKey)){
+    LS.setItem(goalKey,'1'); setTimeout(()=>openGoal('goal-panel'), 1500);
+  }
+  if (prevScore<MAX_THRESH && score>=MAX_THRESH && !LS.getItem(maesKey)){
+    LS.setItem(maesKey,'1'); setTimeout(()=>openGoal('maestro-panel'), 1900);
+  }
+}
+
+/* ============================ INPUT / GAMEPLAY ============================ */
+function saveBoard(){ LS.setItem(`${GAME}-board-${ISO}`, JSON.stringify(guesses)); LS.setItem(`${GAME}-progress-${ISO}`, String(score)); }
+function loadBoard(){ try{ const g=JSON.parse(LS.getItem(`${GAME}-board-${ISO}`)); if(Array.isArray(g)) guesses=g; }catch(e){ guesses=[]; } }
+
+function handleKey(k){
+  if (busy || finished) return;
+  if (k==='enter'){ submitGuess(); return; }
+  if (k==='del'){ if(curGuess.length>0){ curGuess=curGuess.slice(0,-1); renderBoardState(); } return; }
+  if (/^[a-zñ]$/.test(k) && curGuess.length<WORD_LEN){
+    curGuess += k;
+    renderBoardState();
+    // pop the just-filled tile
+    const row=document.querySelector(`.brow[data-row="${guesses.length}"]`);
+    if(row && row.children[curGuess.length-1]){ const t=row.children[curGuess.length-1]; t.classList.add('pop'); setTimeout(()=>t.classList.remove('pop'),120); }
+  }
+}
+function shakeRow(){
+  const row=document.querySelector(`.brow[data-row="${guesses.length}"]`);
+  if(row){ row.classList.add('shake'); setTimeout(()=>row.classList.remove('shake'),420); }
+}
+function submitGuess(){
+  if (curGuess.length<WORD_LEN){ flash('Faltan letras','error'); shakeRow(); return; }
+  if (!VALID.has(curGuess)){ flash('No está en la lista','error'); shakeRow(); return; }
+  const r=guesses.length;
+  const ev=evaluate(curGuess, ANSWER);
+  const prevScore=score;
+  guesses.push(curGuess);
+  const submitted=curGuess; curGuess='';
+  recompute(); saveBoard();
+  busy=true;
+  paintRow(r, submitted, ev, true);
+  const revealDone = WORD_LEN*180 + 300;
+  setTimeout(()=>{
+    renderKeyboard(); renderRank();
+    if (solved){
+      const msgs=['¡Genial!','¡Bien hecho!','¡Excelente!','¡Increíble!','¡Magnífico!','¡De pura suerte!'];
+      flash(msgs[Math.min(r, msgs.length-1)], 'success');
+      const { clean } = recompute();
+      if (clean) setTimeout(()=>flash('✨ ¡Limpio!','bonus'), 1400);
+    } else if (finished){
+      flash(ANSWER.toUpperCase(), 'error');
+    }
+    recordStats();
+    maybeCelebrate(prevScore);
+    busy=false;
+  }, revealDone);
+}
+function onPhysicalKey(e){
+  if (document.querySelector('.modal-overlay.open') || document.querySelector('.goal-panel.open')) return;
+  if (!document.body.classList.contains('game-active')) return;
+  let k=e.key;
+  if (k==='Enter') return handleKey('enter');
+  if (k==='Backspace') return handleKey('del');
+  k=k.toLowerCase();
+  // map accented vowels to their base letter, but KEEP ñ intact
+  const VMAP={'á':'a','à':'a','é':'e','è':'e','í':'i','ì':'i','ó':'o','ò':'o','ú':'u','ù':'u','ü':'u'};
+  if (VMAP[k]) k=VMAP[k];
+  if (k==='ñ' || /^[a-z]$/.test(k)) handleKey(k);
+}
+
+/* ============================ MODALS / MENU / THEME ============================ */
+function openModal(id){ const ov=document.getElementById(id); if(!ov) return; ov.classList.add('open'); ov.scrollTop=0; document.body.style.overflow='hidden'; }
+function closeModals(){ document.querySelectorAll('.modal-overlay.open').forEach(o=>o.classList.remove('open')); document.body.style.overflow=''; window.scrollTo(0,0); document.documentElement.scrollTop=0; document.body.scrollTop=0; }
+function openGoal(id){ const p=document.getElementById(id); if(p) p.classList.add('open'); }
+function closeGoal(id){ const p=document.getElementById(id); if(p) p.classList.remove('open'); }
+function toggleMenu(force){ const m=document.getElementById('menu-pop'); m.classList.toggle('open', force); }
+function applyTheme(t){ document.body.setAttribute('data-theme',t); document.getElementById('land-theme').textContent=(t==='black')?'☀':'☾';
+  try{ const tw=JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}'); tw.theme=t; LS.setItem(`${GAME}-tweaks`,JSON.stringify(tw)); }catch(e){} }
+function toggleTheme(){ applyTheme(document.body.getAttribute('data-theme')==='black'?'light':'black'); }
+
+function renderArchive(){
+  const box=document.getElementById('arch-list'); const t=todayISO(); box.innerHTML='';
+  for (let i=0;i<7;i++){
+    const d=new Date(t+'T12:00:00'); d.setDate(d.getDate()-i); const iso=isoOf(d);
+    const done = !!LS.getItem(`${GAME}-counted-${iso}`) || (LS.getItem(`${GAME}-board-${iso}`)!==null);
+    const isCur = iso===ISO;
+    const btn=document.createElement('button'); btn.className='arch-day'+(isCur?' today':'');
+    btn.innerHTML=`<span>${i===0?'Hoy':prettyDate(iso)}</span><span class="tag">${i===0?prettyDate(iso):(done?'jugado':'')}</span>`;
+    btn.addEventListener('click', ()=>{ closeModals(); if(iso!==ISO){ location.hash=iso; location.reload(); } else { document.body.classList.add('game-active'); } });
+    box.appendChild(btn);
+  }
+}
+
+/* ============================ BOOT ============================ */
+function boot(){
+  try{
+    let theme='light';
+    try{ theme=(JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}').theme)||'light'; }catch(e){}
+    document.body.setAttribute('data-theme',theme);
+    document.getElementById('land-theme').textContent=(theme==='black')?'☀':'☾';
+
+    // landing content
+    document.getElementById('land-name').textContent=GAME_NAME;
+    document.getElementById('land-tagline').textContent=TAGLINE;
+    document.getElementById('land-date').textContent=longDate(ISO);
+    document.getElementById('land-reto').textContent=RETO+' pts';
+
+    // build board + restore
+    buildBoard(); buildKeyboard();
+    loadBoard(); recompute();
+    renderBoardState(); renderKeyboard(); renderRank(); renderRangos();
+
+    // if there's progress for this day (or finished), jump straight into the game
+    if (guesses.length>0) document.body.classList.add('game-active');
+
+    // wiring
+    document.getElementById('play-btn').addEventListener('click', ()=>document.body.classList.add('game-active'));
+    document.getElementById('home-btn').addEventListener('click', ()=>{ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); });
+    document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
+    document.querySelectorAll('[data-modal]').forEach(a=>a.addEventListener('click', ()=>{ toggleMenu(false); if(a.getAttribute('data-modal')==='stats-modal') renderStats(); if(a.getAttribute('data-modal')==='rangos-modal') renderRangos(); openModal(a.getAttribute('data-modal')); }));
+    document.getElementById('arch-link').addEventListener('click', ()=>{ renderArchive(); openModal('arch-modal'); });
+    document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModals));
+    document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click', e=>{ if(e.target===o) closeModals(); }));
+    document.querySelectorAll('[data-close-goal]').forEach(b=>b.addEventListener('click', ()=>closeGoal(b.getAttribute('data-close-goal'))));
+
+    // ☰ menu
+    const menuBtn=document.getElementById('menu-btn');
+    menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
+    document.addEventListener('click', (e)=>{ if(!e.target.closest('.header-nav')) toggleMenu(false); });
+    document.getElementById('m-theme').addEventListener('click', ()=>{ toggleTheme(); toggleMenu(false); });
+    document.getElementById('m-share').addEventListener('click', ()=>{ toggleMenu(false); doShare(); });
+    document.getElementById('m-sub').addEventListener('click', ()=>{ toggleMenu(false); window.open(NEWSLETTER_URL,'_blank'); });
+    document.getElementById('land-sub').addEventListener('click', ()=>window.open(NEWSLETTER_URL,'_blank'));
+
+    // theme toggle (click + touchend, debounced — Samsung Internet)
+    let _tt=0; const themeHandler=(e)=>{ e.preventDefault(); const now=Date.now(); if(now-_tt<350)return; _tt=now; toggleTheme(); };
+    const lt=document.getElementById('land-theme'); lt.addEventListener('click',themeHandler); lt.addEventListener('touchend',themeHandler);
+
+    // share buttons
+    document.getElementById('goal-share').addEventListener('click', doShare);
+    document.getElementById('maestro-share').addEventListener('click', doShare);
+
+    // physical keyboard
+    document.addEventListener('keydown', onPhysicalKey);
+  } finally {
+    document.body.classList.add('ready');
+  }
+}
+boot();
+</script>
+</body>
+</html>

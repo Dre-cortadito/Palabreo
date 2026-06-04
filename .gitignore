@@ -1,0 +1,26 @@
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+.env*
+!.env.example
+
+# macOS
+.DS_Store
+
+# Local deploy scripts — they contain your GitHub token. NEVER publish them.
+*.command
+
+# Reference images / screenshots dropped in the folder — never part of the
+# deployable game (the game is a single self-contained index.html).
+*.png
+*.jpg
+*.jpeg
+
+# Local reference + archive — not part of the deployable game.
+_reference/
+_archive/
+
+# Local-only helper docs — not part of the deployable game.
+DEPLOY-GUIDE.md
+Wordle-Guia-de-Publicacion.pdf
