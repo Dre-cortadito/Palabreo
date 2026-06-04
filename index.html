@@ -106,6 +106,7 @@
     touch-action: manipulation; user-select: none; -webkit-touch-callout: none;
   }
   .page-logo { width: 26px; height: 26px; flex: none; }
+  .header-home svg { width: 16px; height: 16px; }
   .wordmark {
     font-family: var(--font-display); font-size: 22px; font-weight: 600;
     color: var(--ink); white-space: nowrap;
@@ -157,7 +158,7 @@
   }
   .rank-label {
     font-family: var(--font-ui); font-size: 13px; font-weight: 600;
-    color: var(--ink-soft); white-space: nowrap; min-width: 78px;
+    color: var(--ink); white-space: nowrap; min-width: 78px;
   }
   .rank-label.at-maestro { color: var(--accent); }
   .rank-track { position: relative; flex: 1; height: 22px; }
@@ -184,7 +185,7 @@
     background: var(--accent); opacity: .95;
   }
   .rank-marker.done { background: var(--success); }
-  .rank-chev { color: var(--ink-soft); font-size: 12px; }
+  .rank-chev { color: var(--ink); font-size: 12px; }
 
   /* ============================ BUTTONS ============================ */
   button.btn {
@@ -349,9 +350,8 @@
   .word-feedback.error  { background: var(--error);   color: #fff; }
 
   .board {
-    display: grid; grid-template-rows: repeat(6, 1fr); gap: 6px;
-    justify-content: center; margin: 8px auto 0;
-    width: min(86vw, 330px);
+    display: flex; flex-direction: column; gap: 6px;
+    margin: 8px auto 0; width: min(86vw, 330px);
   }
   .brow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
   .tile {
@@ -397,13 +397,15 @@
   <!-- ============================ HEADER ============================ -->
   <header class="page-header">
     <div class="header-left">
-      <button class="header-home" id="home-btn" aria-label="Inicio">⌂</button>
       <svg class="page-logo" viewBox="0 0 32 32" aria-hidden="true">
         <rect x="3"  y="3"  width="12" height="12" rx="3" fill="var(--accent)"/>
         <rect x="17" y="3"  width="12" height="12" rx="3" fill="var(--accent-2)"/>
         <rect x="3"  y="17" width="12" height="12" rx="3" fill="var(--accent-2)"/>
         <rect x="17" y="17" width="12" height="12" rx="3" fill="var(--accent)"/>
       </svg>
+      <button class="header-home" id="home-btn" aria-label="Inicio">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>
+      </button>
       <span class="wordmark">Wordle<span class="dot">.</span></span>
     </div>
     <nav class="header-nav">
@@ -732,7 +734,7 @@ function buildKeyboard(){
       const key=document.createElement('button'); key.className='key';
       key.dataset.key=k;
       if (k==='enter'){ key.classList.add('wide'); key.textContent='Enviar'; }
-      else if (k==='del'){ key.classList.add('wide'); key.textContent='Borrar'; }
+      else if (k==='del'){ key.classList.add('wide'); key.setAttribute('aria-label','Borrar'); key.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H8.6a1.7 1.7 0 0 0-1.3.6L2.5 11.4a1 1 0 0 0 0 1.2l4.8 5.8a1.7 1.7 0 0 0 1.3.6H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m11.5 9.5 5 5M16.5 9.5l-5 5"/></svg>'; }
       else key.textContent=k;
       key.addEventListener('click', ()=>handleKey(k));
       row.appendChild(key);
