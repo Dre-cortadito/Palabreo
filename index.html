@@ -120,6 +120,7 @@
     white-space: nowrap;
   }
   .header-nav a.nav-rules { color: var(--accent); }
+  .header-nav .caret { font-size: 0.72em; color: var(--ink-soft); margin-left: 2px; }
   .hamburger {
     background: transparent; border: 0; color: var(--ink); font-size: 20px;
     cursor: pointer; padding: 4px 6px; line-height: 1;
@@ -146,8 +147,16 @@
   }
   @media (max-width: 560px) {
     body.game-active .wordmark { display: none; }
+  }
+  @media (max-width: 420px) {
     .header-nav { gap: 10px; }
     .header-nav a { font-size: 12px; }
+    .header-home { width: 30px; height: 30px; }
+  }
+  @media (max-width: 340px) {
+    .header-nav { gap: 7px; }
+    .header-nav a { font-size: 11.5px; }
+    .header-home { width: 28px; height: 28px; }
   }
 
   main {
@@ -422,9 +431,9 @@
       <span class="wordmark">Wordle<span class="dot">.</span></span>
     </div>
     <nav class="header-nav">
-      <a class="nav-rules" data-modal="reglas-modal">Reglas</a>
-      <a data-modal="stats-modal">Estadísticas</a>
-      <a id="arch-link">Anteriores</a>
+      <a class="nav-rules" data-modal="reglas-modal">Reglas<span class="caret">▾</span></a>
+      <a data-modal="stats-modal">Estadísticas<span class="caret">▾</span></a>
+      <a id="arch-link">Anteriores<span class="caret">▾</span></a>
       <button class="hamburger" id="menu-btn" aria-label="Más">☰</button>
       <div class="menu-pop" id="menu-pop">
         <button id="m-theme">Tema</button>
