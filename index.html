@@ -99,7 +99,7 @@
     border-bottom: 1px solid var(--ink-line);
   }
   .title-block { display: flex; align-items: center; gap: 12px; min-width: 0; }
-  .page-logo { width: 36px; height: 36px; flex: none; }
+  .page-logo { width: 28px; height: 28px; flex: none; }
   .wordmark {
     margin: 0; font-family: var(--font-display); font-weight: 800;
     font-size: clamp(34px, 5.4vw, 52px); letter-spacing: -1.2px;
@@ -353,11 +353,11 @@
     font-size: 19px; color: var(--ink); max-width: 320px; line-height: 1.35;
     margin: 0;
   }
-  .landing-tabs { position: absolute; top: 66px; left: 0; right: 0; display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; margin: 0; }
-  .landing-tab { background: none; border: none; padding: 6px 1px 9px; font-family: var(--font-ui);
-    font-size: 12px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+  .landing-tabs { position: absolute; top: 76px; left: 0; right: 0; display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin: 0; }
+  .landing-tab { background: none; border: none; padding: 8px 6px 11px; min-width: 5.5em; text-align: center;
+    font-family: var(--font-ui); font-size: 15px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
     color: var(--ink-soft); cursor: pointer; position: relative; transition: color .15s; }
-  @media (max-width: 360px) { .landing-tabs { gap: 10px; } .landing-tab { font-size: 11px; letter-spacing: .8px; } }
+  @media (max-width: 360px) { .landing-tabs { gap: 16px; } .landing-tab { font-size: 13px; letter-spacing: 1.2px; min-width: 0; } }
   .landing-tab.active { color: var(--ink); }
   .landing-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2.5px; background: var(--accent); }
   .landing-tab.is-soon { opacity: .4; cursor: default; letter-spacing: 1.6px; }
@@ -459,6 +459,8 @@
   .waffle-bar { text-align: center; font-family: var(--font-ui); font-weight: 700; font-size: 16px; color: var(--ink); margin: 16px 0 0; flex: none; }
   .waffle-bar .hint { display: block; font-weight: 400; font-size: 12px; color: var(--ink-soft); margin-top: 4px; }
   body:not(.vw) .waffle-bar { display: none; }
+  .waffle-spacer { flex: 0 0 0; }
+  body.vw .waffle-spacer { flex: 1 1 0; min-height: 0; }
   .brow.shake { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
@@ -531,6 +533,7 @@
     <div class="board" id="board"></div>
     <div class="board-spacer"></div>
     <div class="waffle-bar" id="waffle-bar"></div>
+    <div class="waffle-spacer"></div>
     <div class="keyboard" id="keyboard"></div>
   </main>
 
