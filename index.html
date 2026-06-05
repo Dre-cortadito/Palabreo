@@ -631,7 +631,7 @@
         </ul>
       </div>
       <h3>Rangos y Reto del día</h3>
-      <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b>Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a Maestro/a. Cada día hay además un <b>Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b>¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
+      <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
     </div>
   </div>
 
@@ -1257,7 +1257,7 @@ function renderRank(){
   const st=document.getElementById('stat-today'); if(st) st.textContent=`${score} pts · ${RANK_NAMES[curIdx]}`;
 }
 function renderRangos(){
-  document.getElementById('rangos-reto').textContent = `El Reto de hoy es ${RETO} pts.`;
+  document.getElementById('rangos-reto').innerHTML = `El Reto de hoy es <strong style="color:var(--accent)">${RETO} pts</strong>.`;
   const box=document.getElementById('rangos-list'); const curIdx=rankIndex(score);
   let html='';
   for(let i=TOP;i>=0;i--){           // highest rank at the top
