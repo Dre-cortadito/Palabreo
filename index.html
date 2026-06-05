@@ -334,10 +334,11 @@
   .landing {
     position: fixed; inset: 0; z-index: 50; background: var(--bg);
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 24px; gap: 6px;
+    text-align: center; padding: 24px; gap: 16px;
   }
   body.game-active .landing { display: none; }
-  .landing .logo-lg { width: 84px; height: 84px; margin-bottom: 6px; }
+  .landing .logo-lg { width: 96px; height: 96px; margin-bottom: 0; }
+  .landing .name-block { display: flex; flex-direction: column; align-items: center; gap: 3px; }
   .landing-eyebrow {
     font-family: var(--font-ui); font-size: 11px; font-weight: 700;
     letter-spacing: 3px; text-transform: uppercase; color: var(--ink-soft); margin: 0 0 2px;
@@ -350,7 +351,7 @@
   .landing .tagline {
     font-family: var(--font-display); font-style: italic; font-weight: 400;
     font-size: 19px; color: var(--ink); max-width: 320px; line-height: 1.35;
-    margin: 12px 0 4px;
+    margin: 0;
   }
   .landing-tabs { position: absolute; top: 66px; left: 0; right: 0; display: flex; gap: 13px; justify-content: center; flex-wrap: wrap; margin: 0; }
   .landing-tab { background: none; border: none; padding: 6px 1px 9px; font-family: var(--font-ui);
@@ -364,12 +365,12 @@
   @media (prefers-reduced-motion: no-preference) {
     .landing-tab:not(.active):not(.is-soon) { animation: tab-hint 2.4s ease-in-out infinite; }
   }
-  .landing .date { color: var(--ink); font-size: 14px; margin: 14px 0 0; font-feature-settings: "tnum"; }
-  .landing .reto { margin: 4px 0 20px; display: inline-flex; align-items: baseline; gap: 8px; }
+  .landing .date { color: var(--ink); font-size: 14px; margin: 0; font-feature-settings: "tnum"; }
+  .landing .reto { margin: 0; display: inline-flex; align-items: baseline; gap: 8px; }
   .landing .reto .lbl { text-transform: uppercase; letter-spacing: 1.8px; font-size: 10px; font-weight: 700; color: var(--ink-soft); }
   .landing .reto .val { font-family: var(--font-display); font-weight: 800; font-size: 17px; color: var(--accent); }
   .landing .play {
-    margin-top: 4px; background: var(--ink); color: var(--bg);
+    margin-top: 14px; background: var(--ink); color: var(--bg);
     border: 2px solid var(--ink); border-radius: 999px;
     padding: 15px 24px; width: 260px; max-width: 100%;
     font-family: var(--font-ui); font-weight: 700; font-size: 16px; letter-spacing: .4px;
@@ -654,8 +655,10 @@
       <rect x="3"  y="17" width="12" height="12" rx="3" fill="var(--accent-2)"/>
       <rect x="17" y="17" width="12" height="12" rx="3" fill="var(--accent)"/>
     </svg>
+    <div class="name-block">
     <div class="landing-eyebrow" id="land-eyebrow">Palabreo</div>
     <h1 id="land-name">Palabreo</h1>
+    </div>
     <div class="tagline" id="land-tagline">¿Cuál es la palabra de hoy?</div>
     <div class="date" id="land-date">—</div>
     <div class="reto">
