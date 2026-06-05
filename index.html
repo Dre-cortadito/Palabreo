@@ -748,7 +748,7 @@ const VALID_STR="abacha abades abadia abajad abajan abajar abajas abajen abajes 
    ============================================================================ */
 
 /* ---- per-game config ---- */
-let GAME            = 'cortadito-wordle';
+let GAME            = 'cortadito-palabreo';
 const GAME_NAME     = 'Palabreo';
 let TAGLINE         = '¿Cuál es la palabra de hoy?';
 let MAESTRO_NOUN    = 'DÍA';
@@ -772,6 +772,20 @@ const LS = (function () {
   catch (e) { const m = {}; return { getItem:k => (k in m ? m[k] : null), setItem:(k,v)=>{m[k]=String(v);}, removeItem:k=>{delete m[k];} }; }
 })();
 
+/* One-time migration: copy old "cortadito-wordle*" saves -> "cortadito-palabreo*"
+   so the key rename doesn't wipe anyone's progress/stats. Runs once. */
+(function migrateKeys(){
+  try{
+    if(!window.localStorage) return;
+    var OLD='cortadito-'+'wordle', NEW='cortadito-palabreo';
+    if(window.localStorage.getItem(NEW+'-migrated')) return;
+    var old=[]; for(var i=0;i<window.localStorage.length;i++){ var k=window.localStorage.key(i); if(k && k.indexOf(OLD)===0) old.push(k); }
+    for(var j=0;j<old.length;j++){ var nk=NEW+old[j].slice(OLD.length);
+      if(window.localStorage.getItem(nk)===null){ try{ window.localStorage.setItem(nk, window.localStorage.getItem(old[j])); }catch(e){} } }
+    window.localStorage.setItem(NEW+'-migrated','1');
+  }catch(e){}
+})();
+
 /* ---- valid-guess set ---- */
 const VALID6 = new Set(VALID_STR.split(' '));
 const SOL_Q=["estoy","ahora","vamos","bueno","tengo","estas","tiene","puedo","hacer","todos","sabes","puede","usted","quien","nunca","donde","favor","mucho","señor","mejor","decir","sobre","estan","cosas","hasta","antes","estar","noche","hecho","gente","padre","mismo","nadie","ellos","fuera","desde","mundo","claro","tener","habia","tenia","madre","lugar","nuevo","menos","amigo","mujer","luego","buena","gusta","haber","parte","todas","crees","visto","hemos","razon","tanto","saber","veces","serio","tarde","dicho","entre","estos","chica","haces","salir","algun","pense","sabia","somos","forma","seria","chico","adios","quiza","ayuda","nueva","pasar","hacia","niños","feliz","venir","dejar","miedo","justo","horas","poder","manos","debes","viene","venga","cinco","otros","cerca","viejo","tomar","unico","misma","punto","sigue","coche","clase","dices","llama","pueda","igual","juego","podia","final","listo","vivir","meses","culpa","abajo","habla","atras","mayor","morir","facil","comer","lista","hijos","creer","trata","joven","unica","hacen","dicen","medio","saben","hagas","lejos","queda","matar","tenga","verte","sitio","murio","basta","digas","mucha","falta","lleva","otras","fuego","poner","calle","acaba","libro","orden","perro","cielo","viaje","haria","libre","suena","jugar","habra","resto","vemos","trato","demas","armas","amiga","grupo","acabo","error","jamas","largo","novia","sueño","deben","ambos","dolor","darle","negro","ganar","verlo","gusto","pobre","mente","campo","hotel","pagar","llamo","mitad","viste","llego","ellas","vista","linea","salvo","tonto","carta","novio","traje","siete","barco","estes","llevo","entra","prisa","suelo","fotos","decia","capaz","salio","broma","media","dulce","avion","papel","diria","deseo","vayas","hazlo","junto","salud","miren","segun","tipos","señal","honor","veras","vieja","vidas","corte","busca","carne","lindo","cargo","hablo","baile","beber","creia","llega","mirar","sacar","linda","haras","creen","reina","causa","cenar","banco","solia","perra","james","pelea","norte","quise","llave","irnos","exito","modos","pedir","radio","calma","hogar","fondo","henry","verme","parar","lleno","pidio","pista","duele","miles","darme","corre","dejes","nivel","darte","color","hayas","bolsa","banda","santo","ganas","verla","seran","abrir","tocar","vayan","ojala","golpe","nueve","bomba","traer","comun","aquel","vuelo","valor","debia","doble","acaso","seras","hagan","perdi","dando","larga","calor","luces","brazo","llena","salga","paris","pesar","santa","podra","damas","dejas","subir","turno","leche","esten","heroe","trago","arbol","llame","ruido","lucha","muere","reloj","volar","tanta","yendo","malas","hielo","coger","pared","senti","silla","ideas","quedo","locos","verde","bajar","vengo","sirve","playa","total","oigan","hable","serie","mando","solos","apoyo","epoca","desea","echar","datos","magia","nariz","casas","pocos","paseo","envio","trajo","quede","carga","diste","lleve","dedos","robar","sepas","oeste","ayude","cerdo","lider","grave","casos","debio","humor","podre","marca","ponte","dueño","rayos","ponga","pollo","entro","menor","negra","china","video","haran","local","tonta","huele","cinta","costa","fuese","polvo","bella","quiso","angel","malos","debil","hayan","deber","pecho","crear","guapo","extra","primo","niñas","tomas","guapa","genio","queso","pones","lados","pongo","gordo","toque","dejen","penso","techo","conto","truco","salon","sucio","firma","vimos","curso","disco","leido","corta","lunes","guste","falso","india","corto","mueve","tumba","verle","tarea","movil","vacio","clara","plato","ambas","notas","bordo","nieve","fecha","droga","siglo","solas","pieza","legal","reino","busco","clave","bravo","pocas","bolso","viven","ritmo","socio","caido","motor","ruego","dejan","simon","tirar","pasan","carro","volvi","venta","andar","obvio","amaba","autos","venia","vives","bruja","vivos","firme","daria","regla","copia","meter","fumar","grado","pizza","plata","usado","leyes","mires","pasos","vivia","suave","balas","arena","seres","mover","casar","sabra","mirad","miras","julia","hecha","canal","oiste","torre","juega","ricos","hazme","virus","sigan","aviso","bebes","serlo","ponen","zorra","cruel","ducha","actor","cuida","salsa","dudas","votos","tribu","ayudo","ciego","falsa","celda","diles","muera","creas","super","junta","nacio","salen","envia","julio","muero","patio","caras","conde","cajas","trate","tomen","lucas","salgo","bolas","damos","lento","chino","pasta","vegas","peces","sales","deuda","digan","diras","nadar","quita","piano","civil","pagan","canta","museo","huevo","acabe","amado","cable","metio","metro","kilos","harto","marco","bruce","ronda","metal","rusia","boton","hijas","espia","rusos","crema","manda","flota","abran","botas","adoro","placa","metas","japon","calla","sabor","union","citas","punta","mueva","pulso","frase","moral","veran","joyas","noble","letra","arroz","plaza","vacia","judio","pasen","pinta","pasas","hueso","caida","gatos","oidos","almas","salto","sonar","barra","prima","daños","gafas","trozo","vende","traes","conte","rueda","grano","temas","borde","rumbo","valle","gorda","guion","grant","envie","sucia","ratas","animo","risas","clima","caray","tunel","fatal","rubia","sepan","tarta","breve","obras","acero","naves","maten","abrio","bodas","robot","aldea","aguas","matan","tomes","reyes","reves","nubes","circo","darse","salta","texto","porno","diera","tuyos","voces","ataco","apaga","diana","suele","rocas","barba","hojas","ideal","rompe","odias","lanza","falla","cañon","votar","grita","viuda","drama","cueva","abril","venid","solar","dolar","toman","dimos","viera","creyo","daran","casco","rosas","bello","junio","baila","tigre","paren","indio","monte","cazar","rollo","plazo","velas","suyos","cesar","salia","altos","papas","rango","jaula","dosis","segui","comes","duque","bajas","trono","canto","saque","costo","ponlo","besar","lavar","villa","unido","oirme","marte","nieto","patas","oirlo","actos","presa","motel","actua","mason","etapa","fruta","vuela","pesca","llora","plano","elige","harta","green","fines","queja","comen","horno","pares","logro","vodka","rifle","celos","colin","niega","macho","copas","duros","jefes","comio","grito","menti","rumor","besos","oreja","cogio","raras","raton","corea","marzo","pides","feria","parto","mafia"];
@@ -782,9 +796,9 @@ let SOLS = SOLUTIONS;            // active solutions list (set by applyVariant)
 let VALID = VALID6;              // active validation set
 let VLABEL = 'Clásico';
 const VARIANTS = {
-  clasico:{ label:'Clásico', ns:'cortadito-wordle',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:75,2:74,3:32,4:22,5:14,6:8}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', accent:'#9c3b6e' },
-  quordle:{ label:'Cuarteto', ns:'cortadito-wordle-quordle', wordLen:5, rows:9, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', accent:'#4f5bbf' },
-  waffle: { label:'Trenza',   ns:'cortadito-wordle-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:50, retoMax:70, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', accent:'#c8862e' }
+  clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:75,2:74,3:32,4:22,5:14,6:8}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', accent:'#9c3b6e' },
+  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:9, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', accent:'#4f5bbf' },
+  waffle: { label:'Trenza',   ns:'cortadito-palabreo-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:50, retoMax:70, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', accent:'#c8862e' }
 };
 let currentVariant = 'clasico';
 const SAGE_GREEN='#7a9a6d';
@@ -1058,7 +1072,7 @@ function applyVariant(v){
     : isQuordle()
     ? 'Adivina <b>cuatro palabras</b> de cinco letras <b>a la vez</b>, en <b>nueve intentos</b>. Cada palabra que envías se aplica a los cuatro tableros. Resuelve los cuatro antes de quedarte sin intentos.'
     : 'Adivina la <b>palabra del día</b> de '+NUMWORD[WORD_LEN]+' letras en <b>'+NUMWORD[MAX_ROWS]+' intentos</b>. Cada intento debe ser una palabra válida en español. La misma palabra para todo el mundo, cada día.';
-  try{ LS.setItem('cortadito-wordle-variant', v); }catch(e){}
+  try{ LS.setItem('cortadito-palabreo-variant', v); }catch(e){}
 }
 function selectVariant(v){
   if(!VARIANTS[v]) return;
@@ -1541,7 +1555,7 @@ function boot(){
     document.getElementById('land-reto').textContent=RETO+' pts';
 
     // restore last-played variant and build its board
-    let _rv='clasico'; try{ _rv=LS.getItem('cortadito-wordle-variant')||'clasico'; }catch(e){}
+    let _rv='clasico'; try{ _rv=LS.getItem('cortadito-palabreo-variant')||'clasico'; }catch(e){}
     if(!VARIANTS[_rv]) _rv='clasico';
     selectVariant(_rv);
     applyVariant(_rv);
