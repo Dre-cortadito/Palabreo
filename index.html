@@ -869,8 +869,13 @@ function wScore(){
   let greens=0; for(let i=0;i<25;i++) if(WSOL[i]!=='.'&&WCUR[i]===WSOL[i]) greens++;
   wDone=(greens===21); solved=wDone;
   finished = wDone || wSwaps<=0;
-  if(wDone) score=Math.min(100, 70 + Math.max(0,wSwaps)*15);
-  else { const denom=Math.max(1,21-wStartGreens); score=Math.round(Math.max(0,greens-wStartGreens)/denom*55); }
+  // ONE continuous curve for live + final score (no jump on completion):
+  // progress toward solving (0..160) minus a per-swap efficiency cost (6 each).
+  // Solve efficiently (~10 swaps) -> Maestro; sloppy solve (15) -> ~70 floor.
+  const denom=Math.max(1,21-wStartGreens);
+  const progress=Math.min(1, Math.max(0, greens-wStartGreens)/denom);
+  const swapsUsed=Math.max(0, WF_BUDGET - wSwaps);
+  score=Math.max(0, Math.min(100, Math.round(progress*160 - swapsUsed*6)));
 }
 function wBuildBoard(){
   const b=document.getElementById('board'); b.innerHTML=''; b.style.width='min(86vw, 330px)';
