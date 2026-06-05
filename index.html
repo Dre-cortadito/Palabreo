@@ -281,6 +281,17 @@
   .rank-row.current.is-top .name { color: #fff; }
   /* Stats */
   .stat-grid { display: flex; gap: 8px; text-align: center; margin: 10px 0 4px; }
+  /* Estadísticas — Racimo-style sections + stat cards */
+  #stats-modal h3 { margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--ink-line);
+    font-size: 11px; font-weight: 800; color: var(--ink); text-transform: uppercase; letter-spacing: 2px;
+    display: flex; align-items: center; gap: 10px; }
+  #stats-modal h3::before { content: ""; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
+  #stats-modal h3:first-of-type { margin-top: 8px; padding-top: 0; border-top: none; }
+  #stats-modal .stats-row { display: flex; gap: 32px; flex-wrap: wrap; align-items: baseline; margin: 2px 0 0; }
+  #stats-modal .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 16px 28px; margin: 2px 0 0; }
+  #stats-modal .stat-value { font-family: var(--font-display); font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: var(--ink); line-height: 1; }
+  #stats-modal .stat-value.accent { color: var(--accent); }
+  #stats-modal .stat-label { font-size: 11px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink-soft); margin-top: 6px; }
   .stat-cell { flex: 1; }
   .stat-cell .n { font-family: var(--font-display); font-size: 30px; color: var(--ink); line-height: 1; }
   .stat-cell .l { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
@@ -621,8 +632,12 @@
     <div class="modal">
       <button class="modal-close" data-close>✕</button>
       <h2>Estadísticas</h2>
-      <p><b>Hoy:</b> <span id="stat-today">0 pts · Debutante</span></p>
-      <div class="stat-grid" id="stat-grid"></div>
+      <h3>Hoy</h3>
+      <div class="stats-row" id="stats-today"></div>
+      <h3>Récord general</h3>
+      <div class="stats-grid" id="stats-overall"></div>
+      <h3>Rachas</h3>
+      <div class="stats-grid" id="stats-streaks"></div>
       <h3>Distribución de intentos</h3>
       <div id="dist-box"></div>
     </div>
@@ -1271,11 +1286,18 @@ function recordStats(){
 function renderStats(){
   const s=getStats();
   const pct = s.played ? Math.round((s.wins/s.played)*100) : 0;
-  document.getElementById('stat-grid').innerHTML = `
-    <div class="stat-cell"><div class="n">${s.played}</div><div class="l">Jugadas</div></div>
-    <div class="stat-cell"><div class="n">${pct}%</div><div class="l">Victorias</div></div>
-    <div class="stat-cell"><div class="n">${s.cur}</div><div class="l">Racha</div></div>
-    <div class="stat-cell"><div class="n">${s.max}</div><div class="l">Mejor</div></div>`;
+  const playedToday = (guesses.length>0) || (typeof wSwaps==='number' && wSwaps<WF_BUDGET) || finished;
+  document.getElementById('stats-today').innerHTML = playedToday
+    ? `<div class="stat-block"><div class="stat-value">${score}</div><div class="stat-label">Puntos</div></div>
+       <div class="stat-block"><div class="stat-value accent">${RANK_NAMES[rankIndex(score)]}</div><div class="stat-label">Rango de hoy</div></div>`
+    : `<div class="stat-block"><div class="stat-value">—</div><div class="stat-label">Aún sin jugar hoy</div></div>`;
+  document.getElementById('stats-overall').innerHTML = `
+    <div class="stat-block"><div class="stat-value">${s.played}</div><div class="stat-label">Partidas jugadas</div></div>
+    <div class="stat-block"><div class="stat-value">${s.wins}</div><div class="stat-label">Resueltos</div></div>
+    <div class="stat-block"><div class="stat-value">${pct}%</div><div class="stat-label">% victorias</div></div>`;
+  document.getElementById('stats-streaks').innerHTML = `
+    <div class="stat-block"><div class="stat-value accent">${s.cur}</div><div class="stat-label">Racha actual</div></div>
+    <div class="stat-block"><div class="stat-value">${s.max}</div><div class="stat-label">Racha más larga</div></div>`;
   const maxd = Math.max(1, ...s.dist);
   const todayRow = solved ? guesses.length : -1;
   document.getElementById('dist-box').innerHTML = s.dist.map((v,i)=>{
