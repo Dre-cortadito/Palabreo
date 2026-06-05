@@ -428,17 +428,17 @@
   .qboard.solved { opacity: .5; }
   .qrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
   .qrow.shake { animation: shake .4s; }
-  .qtile { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-ui); font-weight: 700; text-transform: uppercase;
-    font-size: clamp(11px, 3.6vw, 17px); color: var(--ink);
-    border: 1.5px solid var(--tile-empty-bd); border-radius: 3px; background: transparent; user-select: none; }
+  .qtile { height: 16px; display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-ui); font-weight: 700; text-transform: uppercase; font-size: 11px; color: var(--ink);
+    border: 1.5px solid var(--tile-empty-bd); border-radius: 3px; background: transparent; user-select: none;
+    transition: height .14s ease, font-size .14s ease; }
+  .qrow.active .qtile { height: 36px; font-size: 18px; }
   .qtile.filled { border-color: var(--ink-soft); }
   .qtile.reveal { animation: flip .45s ease forwards; }
   .qtile.correct { background: var(--tile-correct); border-color: var(--tile-correct); color:#fff; }
   .qtile.present { background: var(--tile-present); border-color: var(--tile-present); color:#fff; }
   .qtile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
-  body.vq .feedback-zone, body.vq .board-spacer { flex: 0 0 auto; min-height: 4px; }
-  body.vq #board { flex: 1 1 auto; min-height: 0; overflow-y: auto; width: 100%; padding: 2px 0; overscroll-behavior: contain; }
+  body.vq #board { width: 100%; }
   /* ---- Waffle: 5x5 swap grid ---- */
   .wgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: min(86vw, 330px); margin: 0 auto; }
   .wcell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
@@ -874,9 +874,11 @@ function qRenderBoardState(){
     // committed rows
     for(let r=0;r<MAX_ROWS;r++){
       const row=document.querySelector('.qboard[data-b="'+bd+'"] .qrow[data-row="'+r+'"]'); if(!row) continue;
+      const isActive = (r===guesses.length && sr<0 && !finished);
+      row.classList.toggle('active', isActive);
       if(r<guesses.length && (sr<0 || r<=sr)){
         qPaintRow(bd,r,guesses[r],evaluate(guesses[r],ANSWERS[bd]),false);
-      } else if(r===guesses.length && sr<0 && !finished){
+      } else if(isActive){
         [...row.children].forEach((t,i)=>{ t.textContent=curGuess[i]?curGuess[i].toUpperCase():''; t.className='qtile'+(curGuess[i]?' filled':''); });
       } else {
         [...row.children].forEach(t=>{ t.textContent=''; t.className='qtile'; });
@@ -1095,7 +1097,7 @@ function renderBoardState(){
 const KEYS = [
   ['q','w','e','r','t','y','u','i','o','p'],
   ['a','s','d','f','g','h','j','k','l','ñ'],
-  ['enter','z','x','c','v','b','n','m','del']
+  ['del','z','x','c','v','b','n','m','enter']
 ];
 function buildKeyboard(){
   const kb = document.getElementById('keyboard'); kb.innerHTML='';
@@ -1104,7 +1106,7 @@ function buildKeyboard(){
     rowKeys.forEach(k=>{
       const key=document.createElement('button'); key.className='key';
       key.dataset.key=k;
-      if (k==='enter'){ key.classList.add('wide','k-enter'); key.setAttribute('aria-label','Enviar'); key.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'; }
+      if (k==='enter'){ key.classList.add('wide','k-enter'); key.setAttribute('aria-label','Enviar'); key.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 9l-4 4 4 4"/><path d="M5 13h11a4 4 0 0 0 4-4V6"/></svg>'; }
       else if (k==='del'){ key.classList.add('wide','k-del'); key.setAttribute('aria-label','Borrar'); key.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 5H8.6a1.7 1.7 0 0 0-1.3.6L2.5 11.4a1 1 0 0 0 0 1.2l4.8 5.8a1.7 1.7 0 0 0 1.3.6H21a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1z"/><path d="m11.5 9.5 5 5M16.5 9.5l-5 5"/></svg>'; }
       else key.textContent=k;
       key.addEventListener('click', ()=>handleKey(k));
