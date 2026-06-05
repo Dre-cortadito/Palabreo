@@ -648,7 +648,7 @@
     <button class="theme-toggle" id="land-theme" aria-label="Tema">☾</button>
     <div class="landing-tabs" id="landing-tabs" role="tablist">
       <button class="landing-tab active" data-variant="clasico" type="button" role="tab">Clásico</button>
-      <button class="landing-tab" data-variant="waffle" type="button" role="tab">Cruce</button>
+      <button class="landing-tab" data-variant="waffle" type="button" role="tab">Trenza</button>
       <button class="landing-tab" data-variant="quordle" type="button" role="tab">Cuarteto</button>
     </div>
     <svg class="logo-lg" viewBox="0 0 32 32" aria-hidden="true">
@@ -717,7 +717,7 @@ let VLABEL = 'Clásico';
 const VARIANTS = {
   clasico:{ label:'Clásico', ns:'cortadito-wordle',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:75,2:74,3:32,4:22,5:14,6:8}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', accent:'#9c3b6e' },
   quordle:{ label:'Cuarteto', ns:'cortadito-wordle-quordle', wordLen:5, rows:9, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', accent:'#4f5bbf' },
-  waffle: { label:'Cruce',   ns:'cortadito-wordle-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:50, retoMax:70, tagline:'Arma el cruce con intercambios.', maestroNoun:'CRUCE', accent:'#c8862e' }
+  waffle: { label:'Trenza',   ns:'cortadito-wordle-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:50, retoMax:70, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', accent:'#c8862e' }
 };
 let currentVariant = 'clasico';
 const SAGE_GREEN='#7a9a6d';
@@ -832,7 +832,7 @@ function wShowResult(){
   const idx=rankIndex(score), isMaestro=idx===TOP;
   if(isMaestro){ setTimeout(()=>openGoal('maestro-panel'),1500); return; }
   const hl=document.getElementById('goal-headline'), sub=document.getElementById('goal-subhead'), body=document.getElementById('goal-body');
-  if(wDone){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Resuelto!'; sub.textContent=(WF_BUDGET-wSwaps)+' movimientos · '+score+' pts · '+RANK_NAMES[idx]; body.textContent='Armaste el cruce. Comparte tu resultado y vuelve mañana por otro.'; }
+  if(wDone){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Resuelto!'; sub.textContent=(WF_BUDGET-wSwaps)+' movimientos · '+score+' pts · '+RANK_NAMES[idx]; body.textContent='Tejiste la trenza. Comparte tu resultado y vuelve mañana por otro.'; }
   else { hl.textContent='¡Casi!'; sub.textContent=score+' pts · '+RANK_NAMES[idx]; body.textContent='Te quedaste sin movimientos. Vuelve mañana por un waffle nuevo.'; }
   setTimeout(()=>openGoal('goal-panel'),1500);
 }
@@ -840,11 +840,11 @@ function wShareText(){
   const idx=rankIndex(score), isMaestro=idx===TOP;
   let fullDate=ISO; try{ const d=new Date(ISO+'T12:00:00'); fullDate=cap(d.toLocaleDateString('es-ES',{weekday:'long'}))+', '+d.getDate()+' de '+d.toLocaleDateString('es-ES',{month:'long'})+' de '+d.getFullYear(); }catch(e){}
   const used=WF_BUDGET-wSwaps; const L=[fullDate,''];
-  L.push('🧇 Palabreo Cruce'+(wDone?' · '+used+' mov.':''));
+  L.push('🧶 Palabreo Trenza'+(wDone?' · '+used+' mov.':''));
   const col=waffleColors(WCUR,WSOL);
   for(let r=0;r<5;r++){ let line=''; for(let c=0;c<5;c++){ const i=r*5+c; line += WSOL[i]==='.'?'⬜':(col[i]==='green'?'🟩':col[i]==='yellow'?'🟪':'⬛'); } L.push(line); }
   L.push('');
-  if(isMaestro){ L.push('👑 ¡Maestro/a del cruce!'); L.push('   Llegué al rango más alto.'); }
+  if(isMaestro){ L.push('👑 ¡Maestro/a de la trenza!'); L.push('   Llegué al rango más alto.'); }
   else L.push('🏆 Rango: '+RANK_NAMES[idx]);
   if(score>=RETO){ const o=score-RETO; L.push('✅ ¡Reto del día logrado!'); L.push('   '+score+' / '+RETO+' pts'+(o>0?'  (+'+o+')':'')); }
   else { const g=RETO-score; L.push('📌 Reto del día'); L.push('   '+score+' / '+RETO+' pts'+(g>0?'  (−'+g+')':'')); }
@@ -987,7 +987,7 @@ function applyVariant(v){
   renderBoardState(); renderKeyboard(); renderRank(); renderRangos();
   const ri=document.getElementById('reglas-intro');
   if(ri) ri.innerHTML = isWaffle()
-    ? 'El cruce esconde <b>seis palabras</b> (tres en filas, tres en columnas). Las letras están revueltas. <b>Toca dos casillas para intercambiarlas</b> y arma las seis palabras antes de gastar tus <b>15 movimientos</b>. Una casilla verde ya está en su sitio; una marcada está en esa palabra, pero en otra casilla. Cuantos menos movimientos uses, más puntos.'
+    ? 'La trenza esconde <b>seis palabras</b> (tres en filas, tres en columnas). Las letras están revueltas. <b>Toca dos casillas para intercambiarlas</b> y teje las seis palabras antes de gastar tus <b>15 movimientos</b>. Una casilla verde ya está en su sitio; una marcada está en esa palabra, pero en otra casilla. Cuantos menos movimientos uses, más puntos.'
     : isQuordle()
     ? 'Adivina <b>cuatro palabras</b> de cinco letras <b>a la vez</b>, en <b>nueve intentos</b>. Cada palabra que envías se aplica a los cuatro tableros. Resuelve los cuatro antes de quedarte sin intentos.'
     : 'Adivina la <b>palabra del día</b> de '+NUMWORD[WORD_LEN]+' letras en <b>'+NUMWORD[MAX_ROWS]+' intentos</b>. Cada intento debe ser una palabra válida en español. La misma palabra para todo el mundo, cada día.';
