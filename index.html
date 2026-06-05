@@ -174,7 +174,7 @@
   .rank-bar, .board, .keyboard { flex: none; }
   /* board is centered between two equal flex spacers; the feedback toast
      lives in the TOP spacer, so it sits centered between rank bar and board. */
-  .feedback-zone { flex: 0 0 auto; min-height: 24px; display: flex; align-items: center; justify-content: center; padding: 6px 16px; }
+  .feedback-zone { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 6px 16px; }
   .board-spacer  { flex: 1 1 0; min-height: 0; }
 
   /* ============================ RANK BAR ============================ */
@@ -456,12 +456,12 @@
   .wcell.gray   { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   .wcell.sel { transform: scale(1.08); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
   body.vw .keyboard { display: none; }
-  .waffle-bar { text-align: center; font-family: var(--font-ui); font-weight: 700; font-size: 22px; color: var(--ink); margin: 16px 0 0; flex: none; }
+  .waffle-bar { flex: none; min-height: 162px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; font-family: var(--font-ui); font-weight: 700; font-size: 22px; color: var(--ink); margin: 0; }
   .waffle-bar b { font-family: var(--font-display); font-weight: 800; font-size: 1.35em; color: var(--accent); }
   .waffle-bar .hint { display: block; font-weight: 400; font-size: 15px; color: var(--ink-soft); margin-top: 10px; }
   body:not(.vw) .waffle-bar { display: none; }
   .waffle-spacer { flex: 0 0 0; }
-  body.vw .waffle-spacer { flex: 1 1 0; min-height: 0; }
+  /* waffle-spacer no longer used — board-spacer centers the grid */
   .brow.shake { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
@@ -483,7 +483,7 @@
   .key.correct { background: var(--tile-correct); color:#fff; }
   .key.present { background: var(--tile-present); color:#fff; }
   .key.absent  { background: var(--tile-absent);  color:#fff; }
-  @media (max-width: 380px) { .key { height: 46px; font-size: 14px; } }
+  @media (max-width: 380px) { .key { height: 46px; font-size: 14px; } .waffle-bar { min-height: 150px; } }
 </style>
 </head>
 <body data-theme="light">
