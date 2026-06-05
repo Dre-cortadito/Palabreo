@@ -301,6 +301,13 @@
     display: flex; align-items: center; justify-content: flex-end; padding: 0 8px; color: var(--ink);
     font-weight: 700; font-size: 12px; }
   .dist-bar.hot { background: var(--accent); color: #fff; }
+  #stats-modal .stats-rank-row { display: flex; align-items: center; gap: 12px; font-size: 13px; margin-bottom: 4px; }
+  #stats-modal .stats-rank-row .name { width: 22px; color: var(--ink); flex-shrink: 0; text-align: right; }
+  #stats-modal .stats-rank-row .bar { flex: 1; height: 22px; background: var(--ink-line); border-radius: 6px; overflow: hidden; }
+  #stats-modal .stats-rank-row .bar-fill { display: block; height: 100%; background: var(--accent); border-radius: 6px; min-width: 0; transition: width .4s ease; }
+  #stats-modal .stats-rank-row .count { width: 30px; text-align: right; color: var(--ink); font-feature-settings: "tnum"; flex-shrink: 0; font-size: 12px; }
+  #stats-modal .stats-footer { margin: 22px 0 0; font-size: 12px; color: var(--ink-soft); font-style: italic; }
+  #stats-modal .stats-footer strong { color: var(--accent); font-weight: 700; }
   /* Archive — month calendar (matches Racimo) */
   .archive-cal { max-width: 320px; margin: 8px auto 0; }
   .cal-head { display: flex; align-items: center; gap: 8px; padding: 4px 4px 12px; }
@@ -364,11 +371,11 @@
     font-size: 19px; color: var(--ink); max-width: 320px; line-height: 1.35;
     margin: 0;
   }
-  .landing-tabs { position: absolute; top: 76px; left: 0; right: 0; display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; margin: 0; }
-  .landing-tab { background: none; border: none; padding: 8px 6px 11px; min-width: 5.5em; text-align: center;
+  .landing-tabs { position: absolute; top: 76px; left: 0; right: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; margin: 0; }
+  .landing-tab { background: none; border: none; padding: 8px 6px 11px; justify-self: center; text-align: center;
     font-family: var(--font-ui); font-size: 15px; font-weight: 700; letter-spacing: 1.8px; text-transform: uppercase;
     color: var(--ink-soft); cursor: pointer; position: relative; transition: color .15s; }
-  @media (max-width: 360px) { .landing-tabs { gap: 16px; } .landing-tab { font-size: 13px; letter-spacing: 1.2px; min-width: 0; } }
+  @media (max-width: 360px) { .landing-tab { font-size: 13px; letter-spacing: 1.2px; } }
   .landing-tab.active { color: var(--ink); }
   .landing-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2.5px; background: var(--accent); }
   .landing-tab.is-soon { opacity: .4; cursor: default; letter-spacing: 1.6px; }
@@ -640,6 +647,7 @@
       <div class="stats-grid" id="stats-streaks"></div>
       <h3>Distribución de intentos</h3>
       <div id="dist-box"></div>
+      <p class="stats-footer">Tus estadísticas se guardan <strong>solo en este navegador</strong>. Nada se envía a Cortadito ni a ningún servidor. Si limpias los datos del navegador, las cookies o el historial del sitio, <strong>tus estadísticas se borrarán</strong>. Tampoco se sincronizan entre dispositivos: cada navegador tiene su propio registro.</p>
     </div>
   </div>
 
@@ -895,7 +903,7 @@ function wShareText(){
   const idx=rankIndex(score), isMaestro=idx===TOP;
   let fullDate=ISO; try{ const d=new Date(ISO+'T12:00:00'); fullDate=cap(d.toLocaleDateString('es-ES',{weekday:'long'}))+', '+d.getDate()+' de '+d.toLocaleDateString('es-ES',{month:'long'})+' de '+d.getFullYear(); }catch(e){}
   const used=WF_BUDGET-wSwaps; const L=[fullDate,''];
-  L.push('🧶 Palabreo Trenza'+(wDone?' · '+used+' mov.':''));
+  L.push('🧩 Palabreo 🧶 Trenza'+(wDone?' · '+used+' mov.':''));
   const col=waffleColors(WCUR,WSOL);
   for(let r=0;r<5;r++){ let line=''; for(let c=0;c<5;c++){ const i=r*5+c; line += WSOL[i]==='.'?'⬜':(col[i]==='green'?'🟩':col[i]==='yellow'?'🟪':'⬛'); } L.push(line); }
   L.push('');
@@ -1011,7 +1019,7 @@ function qShareText(){
   let fullDate=ISO; try{ const d=new Date(ISO+'T12:00:00'); fullDate=cap(d.toLocaleDateString('es-ES',{weekday:'long'}))+', '+d.getDate()+' de '+d.toLocaleDateString('es-ES',{month:'long'})+' de '+d.getFullYear(); }catch(e){}
   const L=[fullDate,''];
   const tally=solvedRow.map(r=> r>=0 ? (r+1) : 'X').join(' · ');
-  L.push('🟪 Palabreo Cuarteto '+s+'/4'); L.push('   '+tally);
+  L.push('🧩 Palabreo 4️⃣ Cuarteto '+s+'/4'); L.push('   '+tally);
   L.push('');
   if(isMaestro){ L.push('👑 ¡Maestro/a del cuarteto!'); L.push('   Llegué al rango más alto.'); }
   else L.push('🏆 Rango: '+RANK_NAMES[idx]);
@@ -1301,9 +1309,8 @@ function renderStats(){
   const maxd = Math.max(1, ...s.dist);
   const todayRow = solved ? guesses.length : -1;
   document.getElementById('dist-box').innerHTML = s.dist.map((v,i)=>{
-    const w = Math.round((v/maxd)*100);
-    return `<div class="dist-row"><span class="k">${i+1}</span>
-      <div class="dist-bar ${i+1===todayRow?'hot':''}" style="width:${Math.max(8,w)}%">${v}</div></div>`;
+    const w = maxd ? (v/maxd)*100 : 0;
+    return `<div class="stats-rank-row${i+1===todayRow?' best':''}"><span class="name">${i+1}</span><span class="bar"><span class="bar-fill" style="width:${w.toFixed(1)}%"></span></span><span class="count">${v}</span></div>`;
   }).join('');
 }
 
@@ -1327,12 +1334,12 @@ function buildShareText(){
   L.push(fullDate);                 // 1. full Spanish date with weekday
   L.push('');
   if (!finished){
-    L.push('🟩 Palabreo '+VLABEL);
+    L.push('🧩 Palabreo 💎 '+VLABEL);
     L.push('⏳ Todavía sin terminar');
     L.push(`📌 Reto del día: ${RETO} pts`);
     L.push(''); L.push(NEWSLETTER_URL); return L.join('\n');
   }
-  L.push(`🟩 Palabreo ${VLABEL} ${solved ? guesses.length : 'X'}/${MAX_ROWS}`);   // 2. game + result
+  L.push(`🧩 Palabreo 💎 ${VLABEL} ${solved ? guesses.length : 'X'}/${MAX_ROWS}`);   // 2. game + result
   L.push(emojiGrid());
   L.push('');
   if (isMaestro){ L.push('👑 ¡Maestro/a del día!'); L.push('   Llegué al rango más alto.'); }   // 3. rango
