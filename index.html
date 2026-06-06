@@ -568,7 +568,7 @@
     <div class="feedback-zone"><div class="word-feedback" id="word-feedback"></div></div>
     <div class="board" id="board"></div>
     <div class="board-spacer">
-      <div class="hint-row" id="hint-row"><div class="hint-slots" id="hint-slots"></div><button class="hint-btn" id="hint-btn" type="button"><svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.7a4.7 4.7 0 0 0-2.9 8.4c.5.4.85.9 1 1.5h3.8c.15-.6.5-1.1 1-1.5A4.7 4.7 0 0 0 12 4.7z"/><path d="M10 8.1a3 3 0 0 1 1.7-1.4"/><path d="M9.9 16.1h4.2"/><path d="M10.3 17.7c.4.8 2.7.8 3.1 0"/><path d="M12 1.4V3.2"/><path d="M5.6 4.4 7 5.8"/><path d="M18.4 4.4 17 5.8"/><path d="M2.6 10.4h1.9"/><path d="M21.4 10.4h-1.9"/><path d="M5.1 15.7 6.6 14.4"/><path d="M18.9 15.7 17.4 14.4"/></svg><span id="hint-label">Pista</span></button></div>
+      <div class="hint-row" id="hint-row"><div class="hint-slots" id="hint-slots"></div><button class="hint-btn" id="hint-btn" type="button"><svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.6a6.4 6.4 0 0 1 6.4 6.4c0 2.1-1 3.5-2.1 4.7-.7.8-1.2 1.5-1.4 2.3H9.1c-.2-.8-.7-1.5-1.4-2.3C6.6 12.5 5.6 11.1 5.6 9A6.4 6.4 0 0 1 12 2.6z"/><path d="M9 6.7a4 4 0 0 1 2.2-1.5"/><path d="M9.2 18.5h5.6"/><path d="M9.6 20.7h4.8"/><path d="M10.5 22.6a2.6 2.6 0 0 0 3 0z" fill="currentColor" stroke-width="1"/></svg><span id="hint-label">Pista</span></button></div>
     </div>
     <div class="waffle-bar" id="waffle-bar"></div>
     <div class="waffle-spacer"></div>
@@ -644,7 +644,7 @@
         </ul>
       </div>
       <h3>Pistas</h3>
-      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta 12 puntos</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
+      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta 8 puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
       <h3>Rangos y Reto del día</h3>
       <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
     </div>
@@ -809,7 +809,7 @@ let VALID = VALID6;              // active validation set
 let VLABEL = 'Clásico';
 const VARIANTS = {
   clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:75,2:74,3:32,4:22,5:14,6:8}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', hintMax:3, accent:'#9c3b6e' },
-  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:9, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:4, accent:'#4f5bbf' },
+  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:9, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:6, accent:'#4f5bbf' },
   waffle: { label:'Trenza',   ns:'cortadito-palabreo-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:85, retoMax:90, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', hintMax:4, accent:'#c8862e' }
 };
 let currentVariant = 'clasico';
@@ -891,7 +891,7 @@ function wScore(){
   const swapsUsed=Math.max(0, WF_BUDGET - wSwaps);
   const penalty=Math.max(0, swapsUsed-5)*4;
   score=Math.max(0, Math.min(100, Math.round(progress*120 - penalty)));
-  if(hintsUsed>0) score=Math.max(0, score - hintsUsed*HINT_PEN);  // pistas cost points
+  if(hintsUsed>0) score=score - hintsUsed*HINT_PEN;   /* can go negative */  // pistas cost points
 }
 function wBuildBoard(){
   const b=document.getElementById('board'); b.innerHTML=''; b.style.width='min(86vw, 330px)';
@@ -978,7 +978,7 @@ function qRecompute(){
   solved=(s===4); finished = solved || guesses.length>=MAX_ROWS;
   score=quordleScore();
   for(let _i=0;_i<qHintCells.length;_i++){ const _h=qHintCells[_i],_a=ANSWERS[_h.b]; if(_a&&_a[_h.pos]) keyState[_a[_h.pos]]='correct'; }
-  if(hintsUsed>0) score=Math.max(0, score - hintsUsed*HINT_PEN);
+  if(hintsUsed>0) score=score - hintsUsed*HINT_PEN;   /* can go negative */
 }
 function qBuildBoard(){
   const b=document.getElementById('board'); b.innerHTML='';
@@ -1196,7 +1196,7 @@ let ANSWER = wordForDate(ISO);
 let ANSWERS = [];            // quordle: the four answers
 let solvedRow = [-1,-1,-1,-1];
 let WSOL='', WCUR='', wSwaps=WF_BUDGET, wSel=-1, wDone=false, wStartGreens=0;
-const HINT_PEN=12;            // points each pista costs
+const HINT_PEN=8;             // points each pista costs (score CAN go negative)
 let hintsUsed=0, hintCells=[], qHintCells=[];  // hint state (per variant/day)
 let guesses = [];           // array of submitted guess strings
 let curGuess = '';          // current typed row
@@ -1251,7 +1251,7 @@ function recompute(){
   }
   finished = solved || guesses.length >= MAX_ROWS;
   for(let _i=0;_i<hintCells.length;_i++){ const _l=ANSWER[hintCells[_i]]; if(_l) keyState[_l]='correct'; }
-  if(hintsUsed>0) score=Math.max(0, score - hintsUsed*HINT_PEN);
+  if(hintsUsed>0) score=score - hintsUsed*HINT_PEN;   /* can go negative */
   return { clean };
 }
 
