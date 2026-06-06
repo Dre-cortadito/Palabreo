@@ -174,7 +174,7 @@
   /* board is centered between two equal flex spacers; the feedback toast
      lives in the TOP spacer, so it sits centered between rank bar and board. */
   .feedback-zone { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 6px 16px; }
-  .board-spacer  { flex: 1 1 0; min-height: 0; }
+  .board-spacer  { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
 
   /* ============================ RANK BAR ============================ */
   .rank-bar {
@@ -494,12 +494,13 @@
 
   /* ============================ KEYBOARD ============================ */
   .keyboard { width: min(98vw, 500px); margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
-  .hint-row { flex: none; display: flex; align-items: center; justify-content: center; gap: 10px; width: min(98vw,500px); margin: 0 auto 8px; min-height: 34px; }
+  .hint-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(98vw,500px); margin: 0 auto; }
   .hint-slots { display: flex; gap: 4px; }
   .hint-tag { font: 700 11px var(--font-ui); color: var(--ink-soft); letter-spacing: .5px; align-self: center; margin-right: 2px; }
-  .hint-slot { width: 22px; height: 26px; border-radius: 5px; border: 1.5px solid var(--ink-line); display: flex; align-items: center; justify-content: center; font: 800 14px var(--font-ui); color: var(--ink); }
+  .hint-slot { width: 24px; height: 34px; box-sizing: border-box; border-radius: 6px; border: 1.5px solid var(--ink-line); display: flex; align-items: center; justify-content: center; font: 800 15px var(--font-ui); color: var(--ink); }
   .hint-slot.on { background: var(--success); border-color: var(--success); color: #fff; }
-  .hint-btn { font: 700 13px var(--font-ui); letter-spacing: .3px; color: var(--ink); background: var(--paper); border: 1.5px solid var(--ink-line); border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; transition: opacity .15s, background .15s; }
+  .hint-btn { height: 34px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; font: 700 13px var(--font-ui); letter-spacing: .3px; line-height: 1; color: var(--ink); background: var(--paper); border: 1.5px solid var(--ink-line); border-radius: 999px; padding: 0 14px; cursor: pointer; white-space: nowrap; transition: opacity .15s, background .15s; }
+  .hint-icon { width: 16px; height: 16px; flex: none; }
   .hint-btn:hover:not(:disabled) { background: var(--accent-soft); }
   .hint-btn:disabled { opacity: .4; cursor: default; }
   .krow { display: flex; gap: 5px; justify-content: center; }
@@ -567,8 +568,9 @@
 
     <div class="feedback-zone"><div class="word-feedback" id="word-feedback"></div></div>
     <div class="board" id="board"></div>
-    <div class="board-spacer"></div>
-    <div class="hint-row" id="hint-row"><div class="hint-slots" id="hint-slots"></div><button class="hint-btn" id="hint-btn" type="button">💡 Pista</button></div>
+    <div class="board-spacer">
+      <div class="hint-row" id="hint-row"><div class="hint-slots" id="hint-slots"></div><button class="hint-btn" id="hint-btn" type="button"><svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 14.6c.15-.75.55-1.3 1.1-1.85A3.9 3.9 0 1 0 8.2 10.9c0 1 .45 1.9 1.05 2.5.55.55.95 1.1 1.1 1.85"/><path d="M9.7 16.4h4.6"/><path d="M10.5 18.4h3"/><path d="M12 1.7V3.4"/><path d="M5.9 4.6 7.2 5.9"/><path d="M18.1 4.6 16.8 5.9"/><path d="M2.8 10.6h1.8"/><path d="M21.2 10.6h-1.8"/><path d="M5.3 15.4 6.7 14.3"/><path d="M18.7 15.4 17.3 14.3"/></svg><span id="hint-label">Pista</span></button></div>
+    </div>
     <div class="waffle-bar" id="waffle-bar"></div>
     <div class="waffle-spacer"></div>
     <div class="keyboard" id="keyboard"></div>
@@ -1117,7 +1119,7 @@ function useHint(){ if(!hintAvailable()){ flash('Sin más pistas','error'); retu
 function renderHints(){ const btn=document.getElementById('hint-btn'); if(!btn) return;
   const slots=document.getElementById('hint-slots'); const max=(VARIANTS[currentVariant].hintMax)||3;
   btn.disabled=!hintAvailable();
-  btn.textContent='\u{1F4A1} Pista'+(hintsUsed>0?' '+hintsUsed+'/'+max:'')+' −'+HINT_PEN;
+  const lab=document.getElementById('hint-label'); if(lab) lab.textContent='Pista'+(hintsUsed>0?' '+hintsUsed+'/'+max:'')+' −'+HINT_PEN+' pts';
   if(!slots) return;
   if(isWaffle()){ slots.innerHTML=''; slots.style.display='none'; return; }
   slots.style.display='';
