@@ -1340,23 +1340,43 @@ function retoTrackPct(){
   }
   return RETO>=RANK_THRESHOLDS[slots]?100:0;
 }
+/* Score position along the track — same continuous mapping as the
+   reto marker, so the bubble physically reaches the marker at
+   exactly RETO points (negative scores pin to the left edge). */
+function scoreTrackPct(s){
+  const slots=RANK_THRESHOLDS.length-1;
+  if(s<=0) return 0;
+  if(s>=RANK_THRESHOLDS[slots]) return 100;
+  for(let i=0;i<slots;i++){
+    const lo=RANK_THRESHOLDS[i], hi=RANK_THRESHOLDS[i+1];
+    if(s>=lo && s<=hi){ const r=hi===lo?0:(s-lo)/(hi-lo); return ((i+r)/slots)*100; }
+  }
+  return 100;
+}
 function renderRank(){
   const track=document.getElementById('rank-track');
   track.innerHTML='<div class="rank-track-line"></div><div class="rank-track-fill"></div>';
   const curIdx=rankIndex(score), done=score>=RETO, slots=RANK_THRESHOLDS.length-1;
-  // plum fill grows to the current rank's dot position
-  track.querySelector('.rank-track-fill').style.width=((curIdx/slots)*100)+'%';
+  // plum fill + bubble follow the SCORE continuously (same mapping as
+  // the reto marker) so the bubble meets the marker at exactly RETO pts
+  const scorePct=scoreTrackPct(score);
+  track.querySelector('.rank-track-fill').style.width=scorePct+'%';
   RANK_THRESHOLDS.forEach((th,i)=>{
-    const isCur=i===curIdx, passed=(score>=th)&&!isCur;
     const dot=document.createElement('div');
-    dot.className='rank-dot'+(isCur?' current':(passed?' passed':''));
-    if(isCur){ dot.textContent=score; if(curIdx===TOP)dot.classList.add('at-maestro'); }
-    const w=isCur?24:6;
+    dot.className='rank-dot'+(score>=th?' passed':'');
+    const w=6;
     if(i===0) dot.style.left='0';
     else if(i===slots) dot.style.left='calc(100% - '+w+'px)';
     else dot.style.left='calc('+((i/slots)*100)+'% - '+(w/2)+'px)';
     track.appendChild(dot);
   });
+  const bubble=document.createElement('div');
+  bubble.className='rank-dot current'+(curIdx===TOP?' at-maestro':'');
+  bubble.textContent=score;
+  bubble.style.left='calc('+scorePct+'% - 12px)';   /* fallback */
+  bubble.style.left='clamp(0px, calc('+scorePct+'% - 12px), calc(100% - 24px))';
+  bubble.style.zIndex='5';
+  track.appendChild(bubble);
   const mk=document.createElement('div'); mk.className='rank-marker'+(done?' done':'');
   mk.style.left=retoTrackPct()+'%'; track.appendChild(mk);
   const lbl=document.getElementById('rank-label');
