@@ -23,6 +23,11 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Newsreader:ital,wght@0,400..800;1,400..800&display=swap" rel="stylesheet">
 <style>
+  /* Disable mobile double-tap-to-zoom everywhere (keeps pinch-zoom for
+     accessibility). Lowest specificity, so per-element touch-action rules
+     like 'touch-action: none' on drag areas still win. */
+  * { touch-action: manipulation; }
+
   :root {
     /* ---- Universal neutrals — shared across every Cortadito game ---- */
     --bg:               #ffffff;
@@ -450,15 +455,15 @@
   .tile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   /* ---- Quordle: 2x2 of small boards, board area scrolls ---- */
   .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; width: min(90vw, 356px); margin: 0 auto; }
-  .qboard { display: flex; flex-direction: column; gap: 2px; transition: opacity .2s; }
+  .qboard { display: flex; flex-direction: column; gap: 3px; transition: opacity .2s; }
   .qboard.solved { opacity: .5; }
   .qrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
   .qrow.shake { animation: shake .4s; }
-  .qtile { height: 14px; display: flex; align-items: center; justify-content: center;
+  .qtile { height: 16px; display: flex; align-items: center; justify-content: center;
     font-family: var(--font-ui); font-weight: 700; text-transform: uppercase; font-size: 11px; color: var(--ink);
     border: 1.5px solid var(--tile-empty-bd); border-radius: 3px; background: transparent; user-select: none;
     transition: height .14s ease, font-size .14s ease; }
-  .qrow.active .qtile { height: 32px; font-size: 17px; }
+  .qrow.active .qtile { height: 36px; font-size: 18px; }
   .qtile.filled { border-color: var(--ink-soft); }
   .qtile.reveal { animation: flip .45s ease forwards; }
   .qtile.correct { background: var(--tile-correct); border-color: var(--tile-correct); color:#fff; }
