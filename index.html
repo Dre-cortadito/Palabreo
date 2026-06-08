@@ -772,7 +772,7 @@ const RANK_THRESHOLDS = [0, 10, 22, 35, 48, 60, 72, 84, 94, 100];
 let RETO_MIN = 55, RETO_MAX = 80;       // daily target window (step 5)
 
 let WORD_LEN = 6, MAX_ROWS = 6;
-let SOLVE_BONUS = {1:75, 2:74, 3:32, 4:22, 5:14, 6:8};
+let SOLVE_BONUS = {1:75, 2:66, 3:55, 4:45, 5:37, 6:30};
 const PT_CORRECT = 5, PT_PRESENT = 2;
 
 /* theme-toggle icons (shared set: theme-sun / theme-moon) */
@@ -809,8 +809,8 @@ let SOLS = SOLUTIONS;            // active solutions list (set by applyVariant)
 let VALID = VALID6;              // active validation set
 let VLABEL = 'Clásico';
 const VARIANTS = {
-  clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:75,2:74,3:32,4:22,5:14,6:8}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', hintMax:3, accent:'#9c3b6e' },
-  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:9, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:6, accent:'#4f5bbf' },
+  clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:75,2:66,3:55,4:45,5:37,6:30}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', hintMax:3, accent:'#9c3b6e' },
+  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:10, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:6, accent:'#4f5bbf' },
   waffle: { label:'Trenza',   ns:'cortadito-palabreo-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:85, retoMax:90, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', hintMax:4, accent:'#c8862e' }
 };
 let currentVariant = 'clasico';
@@ -1001,8 +1001,8 @@ function wShowResult(){
   const idx=rankIndex(score), isMaestro=idx===TOP;
   if(isMaestro){ setTimeout(()=>openGoal('maestro-panel'),1500); return; }
   const hl=document.getElementById('goal-headline'), sub=document.getElementById('goal-subhead'), body=document.getElementById('goal-body');
-  if(wDone){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Resuelto!'; sub.textContent=(WF_BUDGET-wSwaps)+' movimientos · '+score+' pts · '+RANK_NAMES[idx]; body.textContent='Tejiste la trenza. Comparte tu resultado y vuelve mañana por otro.'; }
-  else { hl.textContent='¡Casi!'; sub.textContent=score+' pts · '+RANK_NAMES[idx]; body.textContent='Te quedaste sin movimientos. Vuelve mañana por un waffle nuevo.'; }
+  if(wDone){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Resuelto!'; sub.textContent=(score>=RETO?'✅ ¡Reto del día logrado!':'❌ Reto del día no alcanzado')+' · '+score+'/'+RETO+' pts · '+RANK_NAMES[idx]; body.textContent='Tejiste la trenza. Comparte tu resultado y vuelve mañana por otro.'; }
+  else { hl.textContent='¡Casi!'; sub.textContent='❌ Reto del día no alcanzado · '+score+'/'+RETO+' pts'; body.textContent='Te quedaste sin movimientos. Vuelve mañana por un waffle nuevo.'; }
   setTimeout(()=>openGoal('goal-panel'),1500);
 }
 function wShareText(){
@@ -1035,9 +1035,9 @@ function quordleAnswers(iso){
 }
 function quordleScore(){
   const s=solvedRow.filter(r=>r>=0).length;
-  if(s<4) return [0,25,45,62][s];
+  if(s<4) return [0,38,56,68][s];
   const finishRow=Math.max.apply(null,solvedRow)+1;
-  const FB={4:42,5:38,6:32,7:24,8:16,9:10};
+  const FB={4:42,5:38,6:32,7:24,8:16,9:10,10:6};
   return 70+(FB[finishRow]||10);
 }
 function qRecompute(){
@@ -1128,7 +1128,7 @@ function qShowResult(){
   const hl=document.getElementById('goal-headline'), sub=document.getElementById('goal-subhead'), body=document.getElementById('goal-body');
   if(solved){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Los cuatro!'; body.textContent='Resolviste las cuatro palabras. Comparte tu resultado y vuelve mañana.'; }
   else { hl.textContent='¡Casi!'; body.textContent='Resolviste '+s+' de 4. Las palabras eran: '+ANSWERS.map(w=>w.toUpperCase()).join(', ')+'.'; }
-  sub.textContent=s+'/4 · '+guesses.length+'/'+MAX_ROWS+' · '+score+' pts · '+RANK_NAMES[idx];
+  sub.textContent=(score>=RETO?'✅ ¡Reto del día logrado!':'❌ Reto del día no alcanzado')+' · '+s+'/4 · '+score+'/'+RETO+' pts';
   setTimeout(()=>openGoal('goal-panel'),1500);
 }
 function qShareText(){
@@ -1274,7 +1274,7 @@ let ANSWER = wordForDate(ISO);
 let ANSWERS = [];            // quordle: the four answers
 let solvedRow = [-1,-1,-1,-1];
 let WSOL='', WCUR='', wSwaps=WF_BUDGET, wSel=-1, wDone=false, wStartGreens=0;
-const HINT_PEN=8;             // points each pista costs (score CAN go negative)
+const HINT_PEN=5;             // points each pista costs (score CAN go negative)
 let hintsUsed=0, hintCells=[], qHintCells=[];  // hint state (per variant/day)
 let guesses = [];           // array of submitted guess strings
 let curGuess = '';          // current typed row
@@ -1609,13 +1609,13 @@ function showResult(){
         body=document.getElementById('goal-body');
   if (solved){
     hl.textContent = (score>=RETO) ? '¡Buen sorbo!' : '¡Resuelto!';
-    sub.textContent = `${guesses.length}/${MAX_ROWS} · ${score} pts · ${RANK_NAMES[idx]}`;
+    sub.textContent = (score>=RETO ? '✅ ¡Reto del día logrado!' : '❌ Reto del día no alcanzado') + ` · ${score}/${RETO} pts · ${RANK_NAMES[idx]}`;
     body.textContent = (score>=RETO)
       ? 'Cruzaste la meta del día. Comparte tu resultado y vuelve mañana por una palabra nueva.'
       : 'Resolviste la palabra de hoy. Comparte tu resultado y vuelve mañana por otra.';
   } else {
     hl.textContent = '¡Casi!';
-    sub.textContent = `La palabra era ${ANSWER.toUpperCase()} · ${score} pts · ${RANK_NAMES[idx]}`;
+    sub.textContent = '❌ Reto del día no alcanzado' + ` · ${score}/${RETO} pts · La palabra era ${ANSWER.toUpperCase()}`;
     body.textContent = 'No la tienes hoy, pero los puntos cuentan. Vuelve mañana por otra palabra.';
   }
   setTimeout(()=>openGoal('goal-panel'), 1500);
