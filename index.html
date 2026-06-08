@@ -450,15 +450,15 @@
   .tile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   /* ---- Quordle: 2x2 of small boards, board area scrolls ---- */
   .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; width: min(90vw, 356px); margin: 0 auto; }
-  .qboard { display: flex; flex-direction: column; gap: 3px; transition: opacity .2s; }
+  .qboard { display: flex; flex-direction: column; gap: 2px; transition: opacity .2s; }
   .qboard.solved { opacity: .5; }
   .qrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
   .qrow.shake { animation: shake .4s; }
-  .qtile { height: 16px; display: flex; align-items: center; justify-content: center;
+  .qtile { height: 14px; display: flex; align-items: center; justify-content: center;
     font-family: var(--font-ui); font-weight: 700; text-transform: uppercase; font-size: 11px; color: var(--ink);
     border: 1.5px solid var(--tile-empty-bd); border-radius: 3px; background: transparent; user-select: none;
     transition: height .14s ease, font-size .14s ease; }
-  .qrow.active .qtile { height: 36px; font-size: 18px; }
+  .qrow.active .qtile { height: 32px; font-size: 17px; }
   .qtile.filled { border-color: var(--ink-soft); }
   .qtile.reveal { animation: flip .45s ease forwards; }
   .qtile.correct { background: var(--tile-correct); border-color: var(--tile-correct); color:#fff; }
@@ -622,7 +622,7 @@
         <ul style="margin:8px 0 0; padding-left:20px; color:var(--ink-soft); font-size:14px; line-height:1.6;">
           <li><b>+5</b> por cada letra que descubras <b>en su lugar</b> (verde).</li>
           <li><b>+2</b> por cada letra <b>fuera de lugar</b> (ciruela).</li>
-          <li><b>Bono por rapidez</b>: cuantos menos intentos uses, mayor el bono.</li>
+          <li><b>Bono por eficiencia</b>: cuantos menos intentos uses, mayor el bono.</li>
         </ul>
         <p class="muted" style="margin-top:10px">Si no aciertas, conservas los puntos de las letras que descubriste.</p>
       </div>
@@ -644,7 +644,7 @@
         </ul>
       </div>
       <h3>Pistas</h3>
-      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta 8 puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
+      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta 5 puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
       <h3>Rangos y Reto del día</h3>
       <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
     </div>
@@ -1127,7 +1127,7 @@ function qShowResult(){
   if(isMaestro){ setTimeout(()=>openGoal('maestro-panel'),1500); return; }
   const hl=document.getElementById('goal-headline'), sub=document.getElementById('goal-subhead'), body=document.getElementById('goal-body');
   if(solved){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Los cuatro!'; body.textContent='Resolviste las cuatro palabras. Comparte tu resultado y vuelve mañana.'; }
-  else { hl.textContent='¡Casi!'; body.textContent='Resolviste '+s+' de 4. Las palabras eran: '+ANSWERS.map(w=>w.toUpperCase()).join(', ')+'.'; }
+  else { hl.textContent='¡Casi!'; body.innerHTML='Resolviste '+s+' de 4. Las palabras eran: '+ANSWERS.map(w=>'<b style="color:var(--accent)">'+w.toUpperCase()+'</b>').join(', ')+'.'; }
   sub.textContent=(score>=RETO?'✅ ¡Reto del día logrado!':'❌ Reto del día no alcanzado')+' · '+s+'/4 · '+score+'/'+RETO+' pts';
   setTimeout(()=>openGoal('goal-panel'),1500);
 }
@@ -1233,7 +1233,7 @@ function applyVariant(v){
   if(ri) ri.innerHTML = isWaffle()
     ? 'La trenza esconde <b>seis palabras</b> (tres en filas, tres en columnas). Las letras están revueltas. <b>Toca dos casillas para intercambiarlas</b> y teje las seis palabras antes de gastar tus <b>15 movimientos</b>. Una casilla verde ya está en su sitio; una marcada está en esa palabra, pero en otra casilla. Cuantos menos movimientos uses, más puntos.'
     : isQuordle()
-    ? 'Adivina <b>cuatro palabras</b> de cinco letras <b>a la vez</b>, en <b>nueve intentos</b>. Cada palabra que envías se aplica a los cuatro tableros. Resuelve los cuatro antes de quedarte sin intentos.'
+    ? 'Adivina <b>cuatro palabras</b> de cinco letras <b>a la vez</b>, en <b>diez intentos</b>. Cada palabra que envías se aplica a los cuatro tableros. Resuelve los cuatro antes de quedarte sin intentos.'
     : 'Adivina la <b>palabra del día</b> de '+NUMWORD[WORD_LEN]+' letras en <b>'+NUMWORD[MAX_ROWS]+' intentos</b>. Cada intento debe ser una palabra válida en español. La misma palabra para todo el mundo, cada día.';
   try{ LS.setItem('cortadito-palabreo-variant', v); }catch(e){}
 }
@@ -1615,7 +1615,7 @@ function showResult(){
       : 'Resolviste la palabra de hoy. Comparte tu resultado y vuelve mañana por otra.';
   } else {
     hl.textContent = '¡Casi!';
-    sub.textContent = '❌ Reto del día no alcanzado' + ` · ${score}/${RETO} pts · La palabra era ${ANSWER.toUpperCase()}`;
+    sub.innerHTML = '❌ Reto del día no alcanzado' + ` · ${score}/${RETO} pts · La palabra era <b style="color:var(--accent)">${ANSWER.toUpperCase()}</b>`;
     body.textContent = 'No la tienes hoy, pero los puntos cuentan. Vuelve mañana por otra palabra.';
   }
   setTimeout(()=>openGoal('goal-panel'), 1500);
