@@ -24,3 +24,7 @@ _archive/
 # Local-only helper docs — not part of the deployable game.
 DEPLOY-GUIDE.md
 Wordle-Guia-de-Publicacion.pdf
+Palabreo-Deploy-Guide.pdf
+
+# Local pre-change backups — not part of the deployable game.
+index.html.pre-*
