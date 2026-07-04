@@ -21,6 +21,11 @@
 _reference/
 _archive/
 
+# Internal review notes, audit scripts, and local shortcuts — NOT public.
+_reviews/
+_review-puzzle.js
+*.webloc
+
 # Local-only helper docs — not part of the deployable game.
 DEPLOY-GUIDE.md
 Wordle-Guia-de-Publicacion.pdf
