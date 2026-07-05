@@ -1922,6 +1922,8 @@ boot();
   try{ matchMedia("(orientation: landscape)").addEventListener("change",go); }catch(e){ try{ matchMedia("(orientation: landscape)").addListener(go); }catch(e2){} }
   try{ new MutationObserver(go).observe(document.body,{attributes:true,attributeFilter:["class","data-theme","style"]}); }catch(e){}
 })();
+// --- El Recreo: al llegar con #landing, mostrar SIEMPRE la portada (no saltar al juego) ---
+window.addEventListener("load",function(){ try{ if(location.hash==="#landing"){ document.body.classList.remove("game-active"); history.replaceState(null,"",location.pathname+location.search); } }catch(e){} });
 </script>
 </body>
 </html>
