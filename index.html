@@ -334,6 +334,13 @@
   @media (hover: hover) { .cal-day:not(.disabled):not(.current):hover { background: var(--accent-soft); } }
 
   /* ===================== CELEBRATION MODALS ===================== */
+  /* celebration confetti (self-contained, no libs) */
+  .confetti-box { position: fixed; inset: 0; pointer-events: none; z-index: 9500; overflow: hidden; }
+  .confetti { position: absolute; top: -18px; width: 8px; height: 13px; opacity: .95; will-change: transform; border-radius: 1px;
+    animation-name: conffall; animation-timing-function: cubic-bezier(.22,.6,.5,1); animation-fill-mode: forwards; }
+  @keyframes conffall { from { transform: translate3d(0,-20px,0) rotateZ(0deg); opacity: 1; }
+    to { transform: translate3d(var(--sway,0px),106vh,0) rotateZ(760deg); opacity: .85; } }
+  @media (prefers-reduced-motion: reduce) { .confetti { display: none; } }
   .goal-panel {
     position: fixed; inset: 0; z-index: 70; display: none;
     align-items: center; justify-content: center; padding: 24px;
@@ -610,7 +617,7 @@
       <span class="rank-chev">▾</span>
     </div>
 
-    <div class="feedback-zone"><div class="word-feedback" id="word-feedback"></div></div>
+    <div class="feedback-zone"><div class="word-feedback" id="word-feedback" role="status" aria-live="polite"></div></div>
     <div class="board" id="board"></div>
     <div class="board-spacer">
       <div class="hint-row" id="hint-row"><div class="hint-slots" id="hint-slots"></div><button class="hint-btn" id="hint-btn" type="button"><svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.6a6.4 6.4 0 0 1 6.4 6.4c0 2.1-1 3.5-2.1 4.7-.7.8-1.2 1.5-1.4 2.3H9.1c-.2-.8-.7-1.5-1.4-2.3C6.6 12.5 5.6 11.1 5.6 9A6.4 6.4 0 0 1 12 2.6z"/><path d="M9 6.7a4 4 0 0 1 2.2-1.5"/><path d="M9.2 18.5h5.6"/><path d="M9.6 20.7h4.8"/><path d="M10.5 22.6a2.6 2.6 0 0 0 3 0z" fill="currentColor" stroke-width="1"/></svg><span id="hint-label">Pista</span></button></div>
@@ -665,8 +672,8 @@
       <div class="rules-puntos-clasico">
         <p class="muted">Los puntos suben en vivo mientras juegas:</p>
         <ul style="margin:8px 0 0; padding-left:20px; color:var(--ink-soft); font-size:14px; line-height:1.6;">
-          <li><b>+5</b> por cada letra que descubras <b>en su lugar</b> (verde).</li>
-          <li><b>+2</b> por cada letra <b>fuera de lugar</b> (ciruela).</li>
+          <li><b>+3</b> por cada letra que descubras <b>en su lugar</b> (verde).</li>
+          <li><b>+1</b> por cada letra <b>fuera de lugar</b> (ciruela).</li>
           <li><b>Bono por eficiencia</b>: cuantos menos intentos uses, mayor el bono.</li>
         </ul>
         <p class="muted" style="margin-top:10px">Si no aciertas, conservas los puntos de las letras que descubriste.</p>
@@ -682,14 +689,14 @@
       </div>
       <!-- Trenza -->
       <div class="rules-puntos-trenza">
-        <p class="muted">Arma la trenza intercambiando casillas, dentro de tus <b>15 movimientos</b>:</p>
+        <p class="muted">Arma la trenza intercambiando casillas, dentro de tus <b>18 movimientos</b>:</p>
         <ul style="margin:8px 0 0; padding-left:20px; color:var(--ink-soft); font-size:14px; line-height:1.6;">
           <li><b>Resolverla</b> ya te da una base sólida de puntos.</li>
           <li>Cuantos <b>menos intercambios</b> uses, más puntos — una trenza eficiente te lleva a <b>Maestro/a</b>.</li>
         </ul>
       </div>
       <h3>Pistas</h3>
-      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta 5 puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
+      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
       <h3>Rangos y Reto del día</h3>
       <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
     </div>
@@ -817,7 +824,7 @@ const RANK_THRESHOLDS = [0, 10, 22, 35, 48, 60, 72, 84, 94, 100];
 let RETO_MIN = 55, RETO_MAX = 80;       // daily target window (step 5)
 
 let WORD_LEN = 6, MAX_ROWS = 6;
-let SOLVE_BONUS = {1:82, 2:82, 3:82, 4:76, 5:66, 6:54};   // solve in ≤3 → Maestro; 4→Eminente, 5→Brillante, 6→Increíble (a solve is always rewarded)
+let SOLVE_BONUS = {};   // per-variant; set by applyVariant. Clásico = {1:82,2:82,3:58,4:36,5:24,6:14} → Maestro in ≤2 intentos.
 const PT_CORRECT = 3, PT_PRESENT = 1;
 
 /* theme-toggle icons (shared set: theme-sun / theme-moon) */
@@ -1016,8 +1023,7 @@ function wScore(){
   wDone=(greens===21); solved=wDone;
   finished = wDone || wSwaps<=0;
   // ONE continuous, progress-led curve for live + final score (no jump on
-  // completion). Points climb with every correct tile from move 1; the first
-  // 5 swaps are FREE so the score never stalls at 0 while you're solving.
+  // completion). Points climb with every correct tile from move 1.
   // The first 9 swaps are FREE; only swaps beyond 9 cost efficiency (-5 each).
   // Maestro = a clean solve in <=13 of the 18 swaps, no hints (optimal is ~10,
   // so there's real margin). A full solve never floors below Increíble (~75).
@@ -1067,11 +1073,11 @@ function wTap(i){
 function wShowResult(){
   const key=GAME+'-result-shown-'+ISO; if(LS.getItem(key))return; LS.setItem(key,'1');
   const idx=rankIndex(score), isMaestro=idx===TOP;
-  if(isMaestro){ setTimeout(()=>openGoal('maestro-panel'),1500); return; }
+  if(isMaestro){ setTimeout(()=>{ openGoal('maestro-panel'); launchConfetti(130); },1500); return; }
   const hl=document.getElementById('goal-headline'), sub=document.getElementById('goal-subhead'), body=document.getElementById('goal-body');
   if(wDone){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Resuelto!'; sub.innerHTML=retoSubHTML(score>=RETO, score, RETO, RANK_NAMES[idx], null); body.textContent='Tejiste la trenza. Comparte tu resultado y vuelve mañana por otro.'; }
   else { hl.textContent='¡Casi!'; sub.innerHTML=retoSubHTML(false, score, RETO, RANK_NAMES[idx], null); body.textContent='Te quedaste sin movimientos. Vuelve mañana por un waffle nuevo.'; }
-  setTimeout(()=>openGoal('goal-panel'),1500);
+  setTimeout(()=>{ openGoal('goal-panel'); if(wDone) launchConfetti(score>=RETO?90:60); },1500);
 }
 function wShareText(){
   const idx=rankIndex(score), isMaestro=idx===TOP;
@@ -1192,12 +1198,12 @@ function qShowResult(){
   const key=GAME+'-result-shown-'+ISO;
   if(LS.getItem(key)) return; LS.setItem(key,'1');
   const idx=rankIndex(score), isMaestro=idx===TOP, s=solvedRow.filter(r=>r>=0).length;
-  if(isMaestro){ setTimeout(()=>openGoal('maestro-panel'),1500); return; }
+  if(isMaestro){ setTimeout(()=>{ openGoal('maestro-panel'); launchConfetti(130); },1500); return; }
   const hl=document.getElementById('goal-headline'), sub=document.getElementById('goal-subhead'), body=document.getElementById('goal-body');
   if(solved){ hl.textContent=(score>=RETO)?'¡Buen sorbo!':'¡Los cuatro!'; body.textContent='Resolviste las cuatro palabras. Comparte tu resultado y vuelve mañana.'; }
   else { hl.textContent='¡Casi!'; body.innerHTML='Resolviste '+s+' de 4. Las palabras eran: '+ANSWERS.map(w=>'<b style="color:var(--accent)">'+w.toUpperCase()+'</b>').join(', ')+'.'; }
   sub.innerHTML=retoSubHTML(score>=RETO, score, RETO, RANK_NAMES[idx], s+' de 4 palabras');
-  setTimeout(()=>openGoal('goal-panel'),1500);
+  setTimeout(()=>{ openGoal('goal-panel'); if(solved) launchConfetti(score>=RETO?90:60); },1500);
 }
 function qShareText(){
   const idx=rankIndex(score), isMaestro=idx===TOP, s=solvedRow.filter(r=>r>=0).length;
@@ -1294,12 +1300,13 @@ function applyVariant(v){
     else { WCUR=d[1]; wSwaps=WF_BUDGET; }
     wSel=-1;
   }
+  else { wSwaps=WF_BUDGET; }   // reset Trenza's swap count when leaving it, so other modes don't read a stale "played today"
   guesses=[]; curGuess='';
   buildBoard(); buildKeyboard(); loadBoard(); loadHints(); recompute();
   renderBoardState(); renderKeyboard(); renderRank(); renderRangos(); renderHints();
   const ri=document.getElementById('reglas-intro');
   if(ri) ri.innerHTML = isWaffle()
-    ? 'La trenza esconde <b>seis palabras</b> (tres en filas, tres en columnas). Las letras están revueltas. <b>Toca dos casillas para intercambiarlas</b> y teje las seis palabras antes de gastar tus <b>15 movimientos</b>. Una casilla verde ya está en su sitio; una marcada está en esa palabra, pero en otra casilla. Cuantos menos movimientos uses, más puntos.'
+    ? 'La trenza esconde <b>seis palabras</b> (tres en filas, tres en columnas). Las letras están revueltas. <b>Toca dos casillas para intercambiarlas</b> y teje las seis palabras antes de gastar tus <b>18 movimientos</b>. Una casilla verde ya está en su sitio; una marcada está en esa palabra, pero en otra casilla. Cuantos menos movimientos uses, más puntos.'
     : isQuordle()
     ? 'Adivina <b>cuatro palabras</b> de cinco letras <b>a la vez</b>, en <b>diez intentos</b>. Cada palabra que envías se aplica a los cuatro tableros. Resuelve los cuatro antes de quedarte sin intentos.'
     : 'Adivina la <b>palabra del día</b> de '+NUMWORD[WORD_LEN]+' letras en <b>'+NUMWORD[MAX_ROWS]+' intentos</b>. Cada intento debe ser una palabra válida en español. La misma palabra para todo el mundo, cada día.';
@@ -1665,6 +1672,20 @@ function flash(text, kind){
   fb.textContent=text; fb.className='word-feedback '+(kind||'')+' show';
   clearTimeout(fb._t); fb._t=setTimeout(()=>{ fb.className='word-feedback'; }, 1400);
 }
+function launchConfetti(n){
+  n=n||60;
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const colors=['#9c3b6e','#4f5bbf','#c8862e','#5a7a3a','#c94f7c','#3fae8e'];
+  const box=document.createElement('div'); box.className='confetti-box'; document.body.appendChild(box);
+  for(let i=0;i<n;i++){ const p=document.createElement('i'); p.className='confetti';
+    p.style.left=(Math.random()*100)+'vw'; p.style.background=colors[(Math.random()*colors.length)|0];
+    p.style.setProperty('--sway', ((Math.random()*140-70)|0)+'px');
+    p.style.animationDuration=(1.7+Math.random()*1.7).toFixed(2)+'s';
+    p.style.animationDelay=(Math.random()*0.5).toFixed(2)+'s';
+    if(Math.random()<0.32) p.style.borderRadius='50%';
+    box.appendChild(p); }
+  setTimeout(()=>box.remove(), 4200);
+}
 // Shared result layout: reto status on its own line, then points + rank grouped and highlighted.
 function retoSubHTML(reached, scoreVal, retoVal, rankName, tail){
   return '<div class="goal-reto">'+(reached?'✅ ¡Reto del día logrado!':'❌ Reto del día no alcanzado')+'</div>'
@@ -1678,7 +1699,7 @@ function showResult(){
   if (LS.getItem(key)) return;            // auto-pop once per day (re-share via menu)
   LS.setItem(key,'1');
   const idx=rankIndex(score), isMaestro=idx===TOP;
-  if (isMaestro){ setTimeout(()=>openGoal('maestro-panel'), 1500); return; }
+  if (isMaestro){ setTimeout(()=>{ openGoal('maestro-panel'); launchConfetti(130); }, 1500); return; }
   const hl=document.getElementById('goal-headline'),
         sub=document.getElementById('goal-subhead'),
         body=document.getElementById('goal-body');
@@ -1693,7 +1714,7 @@ function showResult(){
     sub.innerHTML = retoSubHTML(false, score, RETO, RANK_NAMES[idx], 'La palabra era <b style="color:var(--accent)">'+ANSWER.toUpperCase()+'</b>');
     body.textContent = 'No la tienes hoy, pero los puntos cuentan. Vuelve mañana por otra palabra.';
   }
-  setTimeout(()=>openGoal('goal-panel'), 1500);
+  setTimeout(()=>{ openGoal('goal-panel'); if(solved) launchConfetti(score>=RETO?90:60); }, 1500);
 }
 
 /* ============================ INPUT / GAMEPLAY ============================ */
@@ -1854,6 +1875,7 @@ function boot(){
     document.querySelectorAll('.landing-tab').forEach(b=>b.addEventListener('click', ()=>{ if(b.classList.contains('is-soon'))return; selectVariant(b.dataset.variant); }));
     document.getElementById('home-btn').addEventListener('click', ()=>{ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); });
     document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
+    document.getElementById('rank-bar').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); e.stopPropagation(); renderRangos(); openModal('rangos-modal'); } });
     document.querySelectorAll('[data-modal]').forEach(a=>a.addEventListener('click', ()=>{ toggleMenu(false); if(a.getAttribute('data-modal')==='stats-modal') renderStats(); if(a.getAttribute('data-modal')==='rangos-modal') renderRangos(); openModal(a.getAttribute('data-modal')); }));
     document.getElementById('arch-link').addEventListener('click', openArchive);
     document.getElementById('hint-btn').addEventListener('click', useHint);
