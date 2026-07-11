@@ -243,10 +243,10 @@
 
   /* ============================ MODALS ============================ */
   .modal-overlay {
-    position: fixed; inset: 0; z-index: 60;
+    position: fixed; top: var(--header-h); left: 0; right: 0; bottom: 0; z-index: 60;   /* start below the fixed header so the menu bar stays lit while a panel is open (Racimo/Sudoku standard) */
     background: rgba(20,18,14,.55);
     display: none; align-items: flex-start; justify-content: center;
-    padding: 40px 16px; overflow: auto; overscroll-behavior: contain;
+    padding: 24px 16px 40px; overflow: auto; overscroll-behavior: contain;
   }
   body[data-theme="black"] .modal-overlay { background: rgba(0,0,0,.78); }
   .modal-overlay.open { display: flex; }
