@@ -500,9 +500,9 @@
   .wcell.gray   { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   .wcell.sel { transform: scale(1.08); box-shadow: 0 0 0 3px var(--ink); z-index: 2; }
   body.vw .keyboard { display: none; }
-  .waffle-bar { flex: none; min-height: 162px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; text-align: center; font-family: var(--font-ui); font-weight: 700; font-size: 22px; color: var(--ink); margin: 0; }
-  .waffle-bar b { font-family: var(--font-display); font-weight: 800; font-size: 1.35em; color: var(--accent); }
-  .waffle-bar .hint { display: block; font-weight: 400; font-size: 15px; color: var(--ink-soft); margin-top: 10px; }
+  .waffle-bar { flex: none; min-height: 162px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-family: var(--font-ui); font-weight: 700; font-size: 26px; color: var(--ink); margin: 0; }
+  .waffle-bar b { font-family: var(--font-display); font-weight: 800; font-size: 1.5em; color: var(--accent); }
+  .waffle-bar .hint { display: block; font-weight: 400; font-size: 16px; color: var(--ink-soft); margin-top: 12px; }
   body:not(.vw) .waffle-bar { display: none; }
   /* Mode-aware rules: default Clásico; Cuarteto (vq) and Trenza (vw) swap sections */
   .rules-pistas-trenza, .rules-puntos-cuarteto, .rules-puntos-trenza { display: none; }
@@ -511,7 +511,12 @@
   body.vq .rules-puntos-clasico { display: none; }
   body.vq .rules-puntos-cuarteto { display: block; }
   .waffle-spacer { flex: 0 0 0; }
-  /* waffle-spacer no longer used — board-spacer centers the grid */
+  /* Trenza has no keyboard, so the board group would pool a big void underneath it.
+     Balance the freed space above and below by centering the board + hint + moves
+     group: top and bottom spacers grow equally, and the hint row hugs the board. */
+  body.vw .top-spacer    { flex: 1 1 0; }
+  body.vw .board-spacer  { flex: 0 0 auto; padding-top: 14px; }
+  body.vw .waffle-spacer { flex: 1 1 0; }
   .brow.shake { animation: shake .4s; }
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
