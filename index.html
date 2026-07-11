@@ -175,16 +175,20 @@
     max-width: 720px; margin: 0 auto; min-height: 100dvh;
     display: flex; flex-direction: column;
   }
-  .rank-bar, .board, .keyboard { flex: none; }
-  /* board is centered between two equal flex spacers; the feedback toast
-     lives in the TOP spacer, so it sits centered between rank bar and board. */
-  .feedback-zone { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 6px 16px; }
+  .rank-bar, .board-wrap, .keyboard { flex: none; }
+  /* Board sits between two spacers, but the TOP spacer is lighter than the bottom
+     one so the whole stack rides slightly HIGHER (more breathing room below the
+     rank bar). The feedback toast overlays the board (see .board-wrap) instead of
+     taking its own row, so tall modes like Cuarteto don't feel cramped. */
+  .top-spacer    { flex: 0.55 1 0; min-height: 0; }
   .board-spacer  { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  /* board + feedback overlay share one positioned box; the toast floats centered over the board */
+  .board-wrap { position: relative; display: flex; justify-content: center; }
 
   /* ============================ RANK BAR ============================ */
   .rank-bar {
     display: flex; align-items: center; gap: 10px;
-    padding: 6px 0; margin: 0 auto; width: min(90vw, 360px);   /* STANDARD (2026-07-08): the bar matches the BOARD width exactly (.board is min(90vw,360px)) — not a fixed 420px */
+    padding: 8px 0; margin: 0 auto; width: min(94vw, 400px);   /* STANDARD (2026-07-09): matches the shared Cascada/Racimo play-column width (min(94vw,400px)) and 8px vertical padding */
     cursor: pointer; user-select: none;
   }
   .rank-label {
@@ -435,9 +439,11 @@
 
   /* ============================ BOARD ============================ */
   .word-feedback {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 30;
     font-family: var(--font-ui); font-size: 17px; font-weight: 800;
     background: var(--ink); color: var(--bg); padding: 7px 16px; border-radius: 8px;
     opacity: 0; transition: opacity .18s; white-space: nowrap; pointer-events: none;
+    box-shadow: 0 6px 20px rgba(0,0,0,.22);
   }
   .word-feedback.show { opacity: 1; }
   .word-feedback.success { background: var(--success); color: #fff; }
@@ -446,7 +452,7 @@
 
   .board {
     display: flex; flex-direction: column; gap: 6px;
-    margin: 0 auto; width: min(90vw, 360px);
+    margin: 0 auto; width: min(94vw, 400px);
   }
   .brow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
   .tile {
@@ -466,7 +472,7 @@
   .tile.present { background: var(--tile-present); border-color: var(--tile-present); color:#fff; }
   .tile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   /* ---- Quordle: 2x2 of small boards, board area scrolls ---- */
-  .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; width: min(90vw, 356px); margin: 0 auto; }
+  .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; width: min(94vw, 400px); margin: 0 auto; }
   .qboard { display: flex; flex-direction: column; gap: 3px; transition: opacity .2s; }
   .qboard.solved { opacity: .5; }
   .qrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
@@ -483,7 +489,7 @@
   .qtile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   body.vq #board { width: 100%; }
   /* ---- Waffle: 5x5 swap grid ---- */
-  .wgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: min(86vw, 330px); margin: 0 auto; }
+  .wgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: min(94vw, 400px); margin: 0 auto; }
   .wcell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
     font-family: var(--font-ui); font-weight: 700; text-transform: uppercase; font-size: clamp(18px, 6vw, 28px);
     border: 2px solid var(--tile-empty-bd); border-radius: 6px; color: var(--ink); cursor: pointer;
@@ -617,8 +623,11 @@
       <span class="rank-chev">▾</span>
     </div>
 
-    <div class="feedback-zone"><div class="word-feedback" id="word-feedback" role="status" aria-live="polite"></div></div>
-    <div class="board" id="board"></div>
+    <div class="top-spacer"></div>
+    <div class="board-wrap">
+      <div class="board" id="board"></div>
+      <div class="word-feedback" id="word-feedback" role="status" aria-live="polite"></div>
+    </div>
     <div class="board-spacer">
       <div class="hint-row" id="hint-row"><div class="hint-slots" id="hint-slots"></div><button class="hint-btn" id="hint-btn" type="button"><svg class="hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.6a6.4 6.4 0 0 1 6.4 6.4c0 2.1-1 3.5-2.1 4.7-.7.8-1.2 1.5-1.4 2.3H9.1c-.2-.8-.7-1.5-1.4-2.3C6.6 12.5 5.6 11.1 5.6 9A6.4 6.4 0 0 1 12 2.6z"/><path d="M9 6.7a4 4 0 0 1 2.2-1.5"/><path d="M9.2 18.5h5.6"/><path d="M9.6 20.7h4.8"/><path d="M10.5 22.6a2.6 2.6 0 0 0 3 0z" fill="currentColor" stroke-width="1"/></svg><span id="hint-label">Pista</span></button></div>
     </div>
@@ -1035,7 +1044,7 @@ function wScore(){
   if(hintsUsed>0) score=score - hintsUsed*HINT_PEN;   /* can go negative */  // pistas cost points
 }
 function wBuildBoard(){
-  const b=document.getElementById('board'); b.innerHTML=''; b.style.width='min(86vw, 330px)';
+  const b=document.getElementById('board'); b.innerHTML=''; b.style.width='min(94vw, 400px)';
   const grid=document.createElement('div'); grid.className='wgrid';
   for(let i=0;i<25;i++){
     const cell=document.createElement('div');
@@ -1415,7 +1424,7 @@ function buildBoard(){
   if(isQuordle()) return qBuildBoard();
   const b = document.getElementById('board');
   b.innerHTML = '';
-  b.style.width = 'min(90vw, '+(WORD_LEN*60)+'px)';
+  b.style.width = 'min(94vw, 400px)';
   for (let r=0;r<MAX_ROWS;r++){
     const row = document.createElement('div'); row.className='brow'; row.dataset.row=r;
     row.style.gridTemplateColumns = 'repeat('+WORD_LEN+',1fr)';
