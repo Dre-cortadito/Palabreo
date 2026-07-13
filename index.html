@@ -1333,9 +1333,9 @@ function selectVariant(v){
   currentVariant=v;
   applyIdentity(v);
   document.querySelectorAll('.landing-tab').forEach(b=>b.classList.toggle('active', b.dataset.variant===v));
-  const isClasico = (v==='clasico');
-  document.getElementById('land-name').textContent = isClasico ? GAME_NAME : VARIANTS[v].label;
-  const eb=document.getElementById('land-eyebrow'); if(eb) eb.textContent = isClasico ? VARIANTS[v].label : GAME_NAME;
+  // Family standard: eyebrow = family name (small), title = mode name (large) — for EVERY mode, Clásico included.
+  document.getElementById('land-name').textContent = VARIANTS[v].label;
+  const eb=document.getElementById('land-eyebrow'); if(eb) eb.textContent = GAME_NAME;
   document.getElementById('land-tagline').textContent=VARIANTS[v].tagline;
   document.getElementById('land-reto').textContent=retoFor(v,ISO)+' pts';
 }
@@ -1874,7 +1874,7 @@ function boot(){
     var _tn0=document.getElementById('m-theme-name'); if(_tn0) _tn0.textContent=(theme==='black')?'Oscuro':'Claro';
 
     // landing content
-    document.getElementById('land-name').textContent=GAME_NAME;
+    document.getElementById('land-name').textContent=VARIANTS[currentVariant].label;
     document.getElementById('land-tagline').textContent=TAGLINE;
     document.getElementById('land-date').textContent=longDate(ISO);
     document.getElementById('land-reto').textContent=RETO+' pts';
