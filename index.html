@@ -1377,7 +1377,9 @@ function selectVariant(v){
   document.getElementById('land-tagline').textContent=VARIANTS[v].tagline;
   document.getElementById('land-reto').textContent=retoFor(v,ISO)+' pts';
 }
-function enterGame(){ applyVariant(currentVariant); document.body.classList.add('game-active'); if(finished) setTimeout(showResult,500); }
+function enterGame(){ applyVariant(currentVariant); document.body.classList.add('game-active');
+  try{ history.pushState({v:'game'},'',location.pathname+location.search); }catch(e){}  /* so Back returns to the landing */
+  if(finished) setTimeout(showResult,500); }
 
 /* ---- rank helpers ---- */
 function rankIndex(s){ let idx=0; for(let i=0;i<RANK_THRESHOLDS.length;i++){ if(s>=RANK_THRESHOLDS[i]) idx=i; } return idx; }
@@ -1938,7 +1940,8 @@ function boot(){
     // wiring
     document.getElementById('play-btn').addEventListener('click', enterGame);
     document.querySelectorAll('.landing-tab').forEach(b=>b.addEventListener('click', ()=>{ if(b.classList.contains('is-soon'))return; selectVariant(b.dataset.variant); }));
-    document.getElementById('home-btn').addEventListener('click', ()=>{ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); });
+    document.getElementById('home-btn').addEventListener('click', ()=>{ location.href='https://recreo.dre-c8f.workers.dev/'; });   // Home = back to El Recreo (same tab)
+    window.addEventListener('popstate', ()=>{ if(document.body.classList.contains('game-active')){ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); } });   // Back inside the game = landing
     document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
     document.getElementById('rank-bar').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); e.stopPropagation(); renderRangos(); openModal('rangos-modal'); } });
     document.querySelectorAll('[data-modal]').forEach(a=>a.addEventListener('click', ()=>{ toggleMenu(false); if(a.getAttribute('data-modal')==='stats-modal') renderStats(); if(a.getAttribute('data-modal')==='rangos-modal') renderRangos(); openModal(a.getAttribute('data-modal')); }));
