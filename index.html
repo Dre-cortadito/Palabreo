@@ -481,6 +481,10 @@
     font-family: var(--font-ui); font-weight: 700; text-transform: uppercase; font-size: 11px; color: var(--ink);
     border: 1.5px solid var(--tile-empty-bd); border-radius: 3px; background: transparent; user-select: none;
     transition: height .14s ease, font-size .14s ease; }
+  /* Pista clara (Cuarteto): la letra revelada queda FIJADA en su tablero, en verde punteado,
+     hasta que el jugador la escriba — nunca más "¿de qué tablero era esta pista?" */
+  .qtile.hintghost { color: var(--success); border: 1.5px dashed var(--success); opacity: .9; }
+  .qrow.active .qtile.hintghost { border-width: 2px; }
   .qrow.active .qtile { height: 36px; font-size: 18px; }
   .qtile.filled { border-color: var(--ink-soft); }
   .qtile.reveal { animation: flip .45s ease forwards; }
@@ -749,7 +753,7 @@
         </ul>
       </div>
       <h3>Pistas</h3>
-      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> y <b>Cuarteto</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
+      <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Cuarteto</b> además la letra queda <b>fijada en su tablero</b> (en verde punteado) hasta que la escribas; en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
       <h3>Rangos y Reto del día</h3>
       <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
       <h3>Sobre las palabras</h3>
@@ -1207,6 +1211,8 @@ function qPaintRow(bd,r,guess,ev,animate){
     if(animate){ setTimeout(()=>{ t.classList.add('reveal'); setTimeout(apply,200); }, i*150); } else apply();
   });
 }
+function qHintAt(bd,i){ for(let k=0;k<qHintCells.length;k++){ const c=qHintCells[k];
+  if(c && c.b===bd && c.pos===i){ const a=ANSWERS[bd]; return a?a[i]:null; } } return null; }
 function qRenderBoardState(){
   for(let bd=0;bd<4;bd++){
     const sr=solvedRow[bd];
@@ -1218,7 +1224,11 @@ function qRenderBoardState(){
       if(r<guesses.length && (sr<0 || r<=sr)){
         qPaintRow(bd,r,guesses[r],evaluate(guesses[r],ANSWERS[bd]),false);
       } else if(isActive){
-        [...row.children].forEach((t,i)=>{ t.textContent=curGuess[i]?curGuess[i].toUpperCase():''; t.className='qtile'+(curGuess[i]?' filled':''); });
+        [...row.children].forEach((t,i)=>{
+          if(curGuess[i]){ t.textContent=curGuess[i].toUpperCase(); t.className='qtile filled'; }
+          else { const hg=qHintAt(bd,i);
+            if(hg){ t.textContent=hg.toUpperCase(); t.className='qtile hintghost'; }
+            else { t.textContent=''; t.className='qtile'; } } });
       } else {
         [...row.children].forEach(t=>{ t.textContent=''; t.className='qtile'; });
       }
