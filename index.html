@@ -1865,7 +1865,7 @@ function closeGoal(id){ const p=document.getElementById(id); if(p) p.classList.r
 function toggleMenu(force){ const m=document.getElementById('menu-pop'); m.classList.toggle('open', force); }
 function applyTheme(t){ document.body.setAttribute('data-theme',t); document.getElementById('land-theme').innerHTML=(t==='black')?SUN_SVG:MOON_SVG; var _tn=document.getElementById('m-theme-name'); if(_tn) _tn.textContent=(t==='black')?'Oscuro':'Claro';
   try{ if(typeof currentVariant==='string') setColors(currentVariant); }catch(e){}
-  try{ const tw=JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}'); tw.theme=t; LS.setItem(`${GAME}-tweaks`,JSON.stringify(tw)); }catch(e){} }
+  try{ const tw=JSON.parse(LS.getItem('cortadito-palabreo-tweaks')||'{}'); tw.theme=t; LS.setItem('cortadito-palabreo-tweaks',JSON.stringify(tw)); }catch(e){} } /* theme always in the default namespace, regardless of mode */
 function toggleTheme(){ applyTheme(document.body.getAttribute('data-theme')==='black'?'light':'black'); }
 
 let archiveYM = null;
@@ -1919,7 +1919,7 @@ function renderArchiveCal(){
 function boot(){
   try{
     let theme='light';
-    try{ theme=(JSON.parse(LS.getItem(`${GAME}-tweaks`)||'{}').theme)||'light'; }catch(e){}
+    try{ theme=(JSON.parse(LS.getItem('cortadito-palabreo-tweaks')||'{}').theme)||(JSON.parse(LS.getItem('cortadito-palabreo-quordle-tweaks')||'{}').theme)||(JSON.parse(LS.getItem('cortadito-palabreo-waffle-tweaks')||'{}').theme)||'light'; }catch(e){}
     document.body.setAttribute('data-theme',theme);
     document.getElementById('land-theme').innerHTML=(theme==='black')?SUN_SVG:MOON_SVG;
     var _tn0=document.getElementById('m-theme-name'); if(_tn0) _tn0.textContent=(theme==='black')?'Oscuro':'Claro';
