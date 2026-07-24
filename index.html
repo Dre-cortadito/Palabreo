@@ -932,8 +932,8 @@ let VALID = VALID6;              // active validation set
 let VLABEL = 'Clásico';
 const VARIANTS = {
   clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:82,2:82,3:58,4:36,5:24,6:14}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', hintMax:3, accent:'#C03A2E' },
-  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:10, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:6, accent:'#C0702E' },
-  waffle: { label:'Trenza',   ns:'cortadito-palabreo-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:85, retoMax:90, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', hintMax:4, accent:'#C8952E' }
+  quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:10, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:6, accent:'#d9633b' },
+  waffle: { label:'Trenza',   ns:'cortadito-palabreo-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:85, retoMax:90, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', hintMax:4, accent:'#D99F3B' }
 };
 let currentVariant = 'clasico';
 const SAGE_GREEN='#7a9a6d';
@@ -1742,7 +1742,7 @@ function flash(text, kind){
 function launchConfetti(n){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   n=n||90;
-  const colors=['#C03A2E','#4f5bbf','#C8952E','#5a7a3a','#c94f7c','#3fae8e'];
+  const colors=['#C03A2E','#4f5bbf','#D99F3B','#5a7a3a','#c94f7c','#3fae8e'];
   const cv=document.createElement('canvas'); cv.className='confetti-box';
   const W=window.innerWidth, H=window.innerHeight, dpr=Math.min(2, window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+'px'; cv.style.height=H+'px';
