@@ -5,7 +5,7 @@
   ============================================================================
   6x6 daily word guess. Built on the Cortadito shared frame (header, rank bar,
   reto del día, celebrations, theme, share, storage safety) per
-  _kit/DESIGN-SYSTEM.md. Motif accent pair: RED (#C03A2E) + SAGE (#7a9a6d).
+  _kit/DESIGN-SYSTEM.md. Motif accent pair: RED (#CF2A2A) + SAGE (#7a9a6d).
 
   Scoring (Speed + letters, ascending):
     +5 per letter discovered in the correct spot (first time)
@@ -36,11 +36,11 @@
     --ink-soft:         #8a847f;
     --ink-line:         #ece7df;
     --ink-line-strong:  #c9c2b3;
-    --success:          #6b8e3d;   /* olive — "reto logrado / correct spot" */
-    --error:            #b03434;
+    --success:          #4F9E5F;   /* olive — "reto logrado / correct spot" */
+    --error:            #CF2A2A;
 
     /* ---- Motif accent pair: RED + SAGE ---- */
-    --accent:           #C03A2E;   /* plum — actions, rank bubble, reto, present letters */
+    --accent:           #CF2A2A;   /* plum — actions, rank bubble, reto, present letters */
     --accent-deep:      #9d3026;
     --accent-soft:      #f7e1dc;
     --accent-2:         #7a9a6d;   /* sage — secondary motif, quiet highlights */
@@ -931,7 +931,7 @@ let SOLS = SOLUTIONS;            // active solutions list (set by applyVariant)
 let VALID = VALID6;              // active validation set
 let VLABEL = 'Clásico';
 const VARIANTS = {
-  clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:82,2:82,3:58,4:36,5:24,6:14}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', hintMax:3, accent:'#C03A2E' },
+  clasico:{ label:'Clásico', ns:'cortadito-palabreo',      wordLen:6, rows:6, sols:SOLUTIONS, valid:VALID6,    solveBonus:{1:82,2:82,3:58,4:36,5:24,6:14}, retoMin:55, retoMax:80, tagline:'¿Cuál es la palabra de hoy?',  maestroNoun:'DÍA', hintMax:3, accent:'#CF2A2A' },
   quordle:{ label:'Cuarteto', ns:'cortadito-palabreo-quordle', wordLen:5, rows:10, boards:4, sols:SOL_Q, valid:VALID5, solveBonus:{}, retoMin:55, retoMax:80, tagline:'Cuatro palabras a la vez.', maestroNoun:'CUARTETO', hintMax:6, accent:'#d9633b' },
   waffle: { label:'Trenza',   ns:'cortadito-palabreo-waffle',  wordLen:5, rows:5, sols:[], valid:VALID5, solveBonus:{}, retoMin:85, retoMax:90, tagline:'Teje la trenza con intercambios.', maestroNoun:'TRENZA', hintMax:4, accent:'#D99F3B' }
 };
@@ -942,7 +942,7 @@ function _hex(a){return '#'+a.map(x=>Math.max(0,Math.min(255,Math.round(x))).toS
 function _mix(a,b,t){const A=_rgb(a),B=_rgb(b);return _hex(A.map((x,i)=>x+(B[i]-x)*t));}
 function setColors(v){
   const c=VARIANTS[v]||VARIANTS.clasico; const dark=document.body.getAttribute('data-theme')==='black';
-  let a=c.accent||'#C03A2E', a2=SAGE_GREEN;
+  let a=c.accent||'#CF2A2A', a2=SAGE_GREEN;
   if(dark){ a=_mix(a,'#ffffff',0.22); a2=_mix(a2,'#ffffff',0.20); }
   const s=document.body.style;
   s.setProperty('--accent', a);
@@ -1742,7 +1742,7 @@ function flash(text, kind){
 function launchConfetti(n){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   n=n||90;
-  const colors=['#C03A2E','#4f5bbf','#D99F3B','#5a7a3a','#c94f7c','#3fae8e'];
+  const colors=['#CF2A2A','#4f5bbf','#D99F3B','#5a7a3a','#c94f7c','#3fae8e'];
   const cv=document.createElement('canvas'); cv.className='confetti-box';
   const W=window.innerWidth, H=window.innerHeight, dpr=Math.min(2, window.devicePixelRatio||1);
   cv.width=W*dpr; cv.height=H*dpr; cv.style.width=W+'px'; cv.style.height=H+'px';
