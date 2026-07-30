@@ -16,5 +16,6 @@
       "pattern": "cortadito.games/palabreo*",
       "zone_name": "cortadito.games"
     }
-  ]
+  ],
+  "workers_dev": true
 }
