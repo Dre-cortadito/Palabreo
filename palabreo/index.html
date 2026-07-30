@@ -1728,7 +1728,7 @@ function buildShareText(){
 }
 async function doShare(){
   const text=buildShareText();
-  if (navigator.share){ try{ await navigator.share({text}); }catch(e){} return; }
+  if (navigator.share && !navigator.standalone){ try{ await navigator.share({text}); }catch(e){} return; }
   try{ await navigator.clipboard.writeText(text); flash('Copiado','success'); }
   catch(e){ prompt('Copia tu resultado:', text); }
 }
