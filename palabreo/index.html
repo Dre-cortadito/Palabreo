@@ -188,7 +188,7 @@
   /* ============================ RANK BAR ============================ */
   .rank-bar {
     display: flex; align-items: center; gap: 10px;
-    padding: 8px 0; margin: 0 auto; width: min(94vw, 400px);   /* STANDARD (2026-07-09): matches the shared Cascada/Racimo play-column width (min(94vw,400px)) and 8px vertical padding */
+    padding: 8px 0; margin: 0 auto; width: min(94vw, max(400px, var(--cg-wide, 0px)));   /* STANDARD (2026-07-09): matches the shared Cascada/Racimo play-column width (min(94vw, max(400px, var(--cg-wide, 0px)))) and 8px vertical padding */
     cursor: pointer; user-select: none;
   }
   .rank-label {
@@ -452,7 +452,7 @@
 
   .board {
     display: flex; flex-direction: column; gap: 6px;
-    margin: 0 auto; width: min(94vw, 400px);
+    margin: 0 auto; width: min(94vw, max(400px, var(--cg-wide, 0px)));
   }
   .brow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
   .tile {
@@ -472,7 +472,7 @@
   .tile.present { background: var(--tile-present); border-color: var(--tile-present); color:#fff; }
   .tile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   /* ---- Quordle: 2x2 of small boards, board area scrolls ---- */
-  .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; width: min(94vw, 400px); margin: 0 auto; }
+  .qgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 8px; width: min(94vw, max(400px, var(--cg-wide, 0px))); margin: 0 auto; }
   .qboard { display: flex; flex-direction: column; gap: 3px; transition: opacity .2s; }
   .qboard.solved { opacity: .5; }
   .qrow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
@@ -493,7 +493,7 @@
   .qtile.absent  { background: var(--tile-absent);  border-color: var(--tile-absent);  color:#fff; }
   body.vq #board { width: 100%; }
   /* ---- Waffle: 5x5 swap grid ---- */
-  .wgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: min(94vw, 400px); margin: 0 auto; }
+  .wgrid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; width: min(94vw, max(400px, var(--cg-wide, 0px))); margin: 0 auto; }
   .wcell { aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center;
     font-family: var(--font-ui); font-weight: 700; text-transform: uppercase; font-size: clamp(18px, 6vw, 28px);
     border: 2px solid var(--tile-empty-bd); border-radius: 6px; color: var(--ink); cursor: pointer;
@@ -525,8 +525,8 @@
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
   /* ============================ KEYBOARD ============================ */
-  .keyboard { width: min(98vw, 500px); margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
-  .hint-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(98vw,500px); margin: 0 auto; }
+  .keyboard { width: min(98vw, max(500px, var(--cg-wide, 0px))); margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  .hint-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(98vw, max(500px, var(--cg-wide, 0px))); margin: 0 auto; }
   .hint-slots { display: flex; gap: 4px; }
   .hint-tag { font: 700 11px var(--font-ui); color: var(--ink-soft); letter-spacing: .5px; align-self: center; margin-right: 2px; }
   .hint-slot { width: 24px; height: 34px; box-sizing: border-box; border-radius: 6px; border: 1.5px solid var(--ink-line); display: flex; align-items: center; justify-content: center; font: 800 15px var(--font-ui); color: var(--ink); }
@@ -732,6 +732,18 @@
   };
 })();
 </script>
+<!-- ===== CORTADITO — installable app (2026-08-02) =====
+     This manifest link is what makes Android install a REAL app (a WebAPK)
+     when a player adds a GAME page to their home screen. Without it Chrome
+     creates a plain bookmark shortcut that opens inside Chrome and inherits
+     the site's "Sitio para computadoras" setting — which is how a Samsung
+     tester ended up playing at a 980px CSS viewport with the board at 41% of
+     the screen. start_url/scope are "/", so installing from any page gives
+     one icon, "Cortadito Games", opening at the hub. -->
+<link rel="manifest" href="/site.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cortadito Games">
 </head>
 <body data-theme="light">
 
@@ -1218,7 +1230,7 @@ function wScore(){
   if(hintsUsed>0) score=score - hintsUsed*HINT_PEN;   /* can go negative */  // pistas cost points
 }
 function wBuildBoard(){
-  const b=document.getElementById('board'); b.innerHTML=''; b.style.width='min(94vw, 400px)';
+  const b=document.getElementById('board'); b.innerHTML=''; b.style.width='min(94vw, max(400px, var(--cg-wide, 0px)))';
   const grid=document.createElement('div'); grid.className='wgrid';
   for(let i=0;i<25;i++){
     const cell=document.createElement('div');
@@ -1606,7 +1618,7 @@ function buildBoard(){
   if(isQuordle()) return qBuildBoard();
   const b = document.getElementById('board');
   b.innerHTML = '';
-  b.style.width = 'min(94vw, 400px)';
+  b.style.width = 'min(94vw, max(400px, var(--cg-wide, 0px)))';
   for (let r=0;r<MAX_ROWS;r++){
     const row = document.createElement('div'); row.className='brow'; row.dataset.row=r;
     row.style.gridTemplateColumns = 'repeat('+WORD_LEN+',1fr)';
@@ -2236,5 +2248,29 @@ window.addEventListener("load",function(){ try{ if(location.hash==="#landing"){ 
   });
 })();
 </script>
+<style>
+  /* ===== Forced-desktop guard (2026-08-02) =====
+     Belt and suspenders for the manifest fix above: a player who switches on
+     "Sitio para computadoras" by hand still gets a ~980px CSS viewport on a
+     phone, and every board renders at its desktop px cap — about 41% of the
+     physical screen, adrift in whitespace.
+
+     A viewport that WIDE and that TALL and driven by a COARSE pointer is a
+     phone held upright; it is never a desktop window (those report
+     pointer: fine) and never a tablet (wrong aspect ratio). There, and only
+     there, boards use their vw width instead of their px cap.
+
+     --cg-wide is 0px everywhere else, so every patched
+     min(<n>vw, max(<cap>, var(--cg-wide, 0px))) computes to exactly the
+     original min(<n>vw, <cap>) outside this query — a provable no-op. */
+  :root { --cg-wide: 0px; }
+  @media (min-width: 700px) and (max-aspect-ratio: 2/3) and (pointer: coarse) {
+    :root { --cg-wide: 100vw; --max-page: 100vw; }
+    main, .page, .wrap, .shell, .container, .stage { max-width: none; }
+    /* Racimo's mobile branch caps the cherry cluster at 460px, which never
+       binds on a real phone (the column is ~340px) but does bind here. */
+    .cluster-stage { max-width: 92vw; }
+  }
+</style>
 </body>
 </html>
