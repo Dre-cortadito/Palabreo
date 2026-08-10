@@ -2060,7 +2060,7 @@ function boot(){
     // restore last-played variant and build its board
     let _rv='clasico'; try{ _rv=LS.getItem('cortadito-palabreo-variant')||'clasico'; }catch(e){}
     if(!VARIANTS[_rv]) _rv='clasico';
-    // Deep link desde El Recreo: ?modo=clasico|trenza|cuarteto abre ese modo y oculta las pestañas
+    // Deep link desde el hub: ?modo=clasico|trenza|cuarteto abre ese modo y oculta las pestañas
     try{
       var _dm=new URLSearchParams(location.search).get('modo');
       if(_dm){ var _map={clasico:'clasico',trenza:'waffle',cuarteto:'quordle'}; var _mv=_map[_dm.toLowerCase()]; if(_mv&&VARIANTS[_mv]) _rv=_mv; }
@@ -2073,12 +2073,29 @@ function boot(){
 
     // if there's progress for this day (or finished), jump straight into the game
     if (guesses.length>0) document.body.classList.add('game-active');
+
+    /* Gate clamp (launch checklist §1): la restauración del último modo puede
+       reabrir una variante que HOY está bloqueada — la puerta solo mira la URL,
+       que aquí no trae ?modo. Tras arrancar la puerta (setTimeout 0 corre
+       después de su boot en DOMContentLoaded), si la variante restaurada no es
+       gratis hoy y no somos Premium, navegamos a Clásico (siempre gratis). */
+    document.addEventListener('DOMContentLoaded', function(){
+      setTimeout(function(){
+        try{
+          var G = window.CGGate;
+          if (!G || !G.enforce || G.isPremium()) return;
+          if (new URLSearchParams(location.search).get('modo')) return;   // deep links ya pasan por la puerta
+          var gm = { clasico:'clasico', waffle:'trenza', quordle:'cuarteto' }[currentVariant] || 'clasico';
+          if (!G.isFree('palabreo', gm)) location.replace('/palabreo/?modo=clasico');
+        }catch(e){}
+      }, 0);
+    });
     if (finished) setTimeout(showResult, 600);   // re-show once if opened already finished
 
     // wiring
     document.getElementById('play-btn').addEventListener('click', enterGame);
     document.querySelectorAll('.landing-tab').forEach(b=>b.addEventListener('click', ()=>{ if(b.classList.contains('is-soon'))return; selectVariant(b.dataset.variant); }));
-    document.getElementById('home-btn').addEventListener('click', ()=>{ location.href='https://cortadito.games/'; });   // Home = back to El Recreo (same tab)
+    document.getElementById('home-btn').addEventListener('click', ()=>{ location.href='https://cortadito.games/'; });   // Home = back to the hub (same tab)
     window.addEventListener('popstate', ()=>{ if(document.body.classList.contains('game-active')){ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); } });   // Back inside the game = landing
     document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
     document.getElementById('rank-bar').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); e.stopPropagation(); renderRangos(); openModal('rangos-modal'); } });
@@ -2151,7 +2168,7 @@ boot();
   try{ matchMedia("(orientation: landscape)").addEventListener("change",go); }catch(e){ try{ matchMedia("(orientation: landscape)").addListener(go); }catch(e2){} }
   try{ new MutationObserver(go).observe(document.body,{attributes:true,attributeFilter:["class","data-theme","style"]}); }catch(e){}
 })();
-// --- El Recreo: al llegar con #landing, mostrar SIEMPRE la portada (no saltar al juego) ---
+// --- Hub: al llegar con #landing, mostrar SIEMPRE la portada (no saltar al juego) ---
 window.addEventListener("load",function(){ try{ if(location.hash==="#landing"){ document.body.classList.remove("game-active"); history.replaceState(null,"",location.pathname+location.search); } }catch(e){} });
 </script>
 
