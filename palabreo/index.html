@@ -181,8 +181,8 @@
      one so the whole stack rides slightly HIGHER (more breathing room below the
      rank bar). The feedback toast overlays the board (see .board-wrap) instead of
      taking its own row, so tall modes like Cuarteto don't feel cramped. */
-  .top-spacer    { flex: 0.55 1 0; min-height: 0; max-height: 52px; }   /* cap: installed-app viewports are much taller (no browser chrome) — without a cap the void above the board grows huge */
-  .board-spacer  { flex: 1 1 0; min-height: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: 12px; }
+  .top-spacer    { flex: 0.8 1 0; min-height: 0; max-height: 96px; }   /* cap: installed-app viewports are much taller (no browser chrome) — without a cap the void above the board grows huge. 2026-08-11: 52→96 — the leftover now splits .55 top / 1 bottom (see .waffle-spacer), so the top share breathes a bit more */
+  .board-spacer  { flex: 0 0 auto; display: flex; align-items: flex-start; justify-content: center; padding-top: 12px; }   /* 2026-08-11: no longer the stretchy region — it pooled ALL leftover height into one dead zone between the Pista row and the keyboard (Dre). The hint row hugs the board; .waffle-spacer grows instead */
   /* board + feedback overlay share one positioned box; the toast floats centered over the board */
   .board-wrap { position: relative; display: flex; justify-content: center; }
 
@@ -452,7 +452,7 @@
   .word-feedback.error   { background: var(--accent);  color: #fff; }
 
   .board {
-    display: flex; flex-direction: column; gap: 6px;
+    display: flex; flex-direction: column; gap: clamp(6px, 1.1dvh, 11px);   /* 2026-08-11: rows breathe on tall viewports */
     margin: 0 auto; width: min(94vw, max(400px, var(--cg-wide, 0px)));
   }
   .brow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
@@ -515,7 +515,7 @@
   body.vw .rules-pistas-trenza, body.vw .rules-puntos-trenza { display: block; }
   body.vq .rules-puntos-clasico { display: none; }
   body.vq .rules-puntos-cuarteto { display: block; }
-  .waffle-spacer { flex: 0 0 0; }
+  .waffle-spacer { flex: 1 1 0; min-height: 0; }   /* 2026-08-11: the flexible region below the hint row — pairs with .top-spacer (.55) so leftover height splits ~35/65 instead of pooling in .board-spacer */
   /* Trenza has no keyboard, so the board group would pool a big void underneath it.
      Balance the freed space above and below by centering the board + hint + moves
      group: top and bottom spacers grow equally, and the hint row hugs the board. */
@@ -526,7 +526,7 @@
   @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-6px)} 40%,80%{transform:translateX(6px)} }
 
   /* ============================ KEYBOARD ============================ */
-  .keyboard { width: min(98vw, max(500px, var(--cg-wide, 0px))); margin: 0 auto; display: flex; flex-direction: column; gap: 6px; }
+  .keyboard { width: min(98vw, max(500px, var(--cg-wide, 0px))); margin: 0 auto clamp(0px, 1.4dvh, 14px); display: flex; flex-direction: column; gap: clamp(6px, 0.9dvh, 9px); }   /* 2026-08-11: breathes on tall viewports */
   .hint-row { display: flex; align-items: center; justify-content: center; gap: 10px; width: min(98vw, max(500px, var(--cg-wide, 0px))); margin: 0 auto; }
   .hint-slots { display: flex; gap: 4px; }
   .hint-tag { font: 700 11px var(--font-ui); color: var(--ink-soft); letter-spacing: .5px; align-self: center; margin-right: 2px; }
@@ -537,7 +537,7 @@
   .hint-btn:disabled { opacity: .4; cursor: default; }
   .krow { display: flex; gap: 5px; justify-content: center; }
   .key {
-    flex: 1; min-width: 0; height: 50px; border-radius: 6px; border: 0;
+    flex: 1; min-width: 0; height: clamp(50px, 6.3dvh, 62px); border-radius: 6px; border: 0;   /* 2026-08-11: keys absorb height on tall viewports */
     background: var(--ink-line); color: var(--ink);
     font-family: var(--font-ui); font-weight: 700; font-size: 15px; text-transform: uppercase;
     cursor: pointer; display: flex; align-items: center; justify-content: center;
