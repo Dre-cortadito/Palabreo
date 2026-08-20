@@ -2102,7 +2102,12 @@ function boot(){
     window.addEventListener('popstate', ()=>{ if(document.body.classList.contains('game-active')){ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); } });   // Back inside the game = landing
     document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
     document.getElementById('rank-bar').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); e.stopPropagation(); renderRangos(); openModal('rangos-modal'); } });
-    document.querySelectorAll('[data-modal]').forEach(a=>a.addEventListener('click', ()=>{ toggleMenu(false); if(a.getAttribute('data-modal')==='stats-modal') renderStats(); if(a.getAttribute('data-modal')==='rangos-modal') renderRangos(); openModal(a.getAttribute('data-modal')); }));
+    /* preventDefault: several of these triggers are <a href="#">. Letting the
+       browser follow the fragment fires popstate, and the "Back inside the game
+       = landing" handler two lines up then closes the modal we just opened and
+       kicks the player out to the portada. Racimo (#more-about) and Sudoku
+       ([data-modal]) already preventDefault here — Palabreo was the outlier. */
+    document.querySelectorAll('[data-modal]').forEach(a=>a.addEventListener('click', (e)=>{ e.preventDefault(); toggleMenu(false); if(a.getAttribute('data-modal')==='stats-modal') renderStats(); if(a.getAttribute('data-modal')==='rangos-modal') renderRangos(); openModal(a.getAttribute('data-modal')); }));
     document.getElementById('arch-link').addEventListener('click', openArchive);
     document.getElementById('hint-btn').addEventListener('click', useHint);
     document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click', closeModals));
@@ -2114,8 +2119,8 @@ function boot(){
     menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
     document.addEventListener('click', (e)=>{ if(!e.target.closest('.header-nav')) toggleMenu(false); });
     document.getElementById('m-theme').addEventListener('click', ()=>{ toggleTheme(); toggleMenu(false); });
-    document.getElementById('m-share').addEventListener('click', ()=>{ toggleMenu(false); doShare(); });
-    document.getElementById('m-sub').addEventListener('click', ()=>{ toggleMenu(false); window.open(NEWSLETTER_URL,'_blank'); });
+    document.getElementById('m-share').addEventListener('click', (e)=>{ e.preventDefault(); toggleMenu(false); doShare(); });          /* href="#" → popstate → landing; see [data-modal] above */
+    document.getElementById('m-sub').addEventListener('click', (e)=>{ e.preventDefault(); toggleMenu(false); window.open(NEWSLETTER_URL,'_blank'); });
     document.getElementById('land-sub').addEventListener('click', ()=>window.open(NEWSLETTER_URL,'_blank'));
 
     // theme toggle (click + touchend, debounced — Samsung Internet)
