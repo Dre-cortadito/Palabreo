@@ -1,0 +1,28 @@
+# Files that must never be served publicly — only the game ships.
+# wrangler reads this (gitignore-style) from the assets directory (".").
+#
+# Belt-and-braces: .gitignore already keeps most of these out of the repo.
+# This guarantees they are never SERVED even if one is ever committed by the
+# `git add -A` in _deploy.command. Palabreo publishes its repo root as the web
+# root, so an unignored file lands at cortadito.games/palabreo/<file>.
+
+# git + wrangler plumbing
+.git
+.gitignore
+.assetsignore
+.wrangler
+wrangler.jsonc
+
+# local scripts — deploy/setup hold a GitHub token, rebuild holds build logic
+*.command
+*.sh
+
+# internal tooling, review notes, backups, local shortcuts
+_review-puzzle.js
+_reviews/
+_docs/
+_archive/
+*.dict-backup
+*.webloc
+*.md
+.DS_Store
