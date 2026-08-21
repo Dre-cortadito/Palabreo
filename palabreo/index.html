@@ -70,7 +70,6 @@
     --ink-soft:  #8a8278;
     --ink-line:  #2a2420;
     --ink-line-strong:#4a4138;
-    --accent:        #d9564a;
     --accent-deep:   #b34236;
     --accent-soft:   #3a1712;
     --accent-2:      #7DA877;
@@ -819,7 +818,7 @@
   <!-- ============================ MODALS ============================ -->
   <div class="modal-overlay" id="reglas-modal">
     <div class="modal">
-      <button class="modal-close" data-close>✕</button>
+      <button class="modal-close" data-close>×</button>
       <h2>Cómo jugar</h2>
       <button type="button" onclick="if(window.openTutorial)window.openTutorial()" style="display:inline-flex;align-items:center;gap:7px;margin:2px 0 12px;padding:9px 16px;border-radius:999px;border:2px solid var(--accent);background:transparent;color:var(--accent);font:700 14px var(--font-ui);cursor:pointer">Ver tutorial animado</button>
       <p id="reglas-intro">Adivina la <b>palabra del día</b> de seis letras en <b>seis intentos</b>. Cada intento debe ser una palabra válida en español; pulsa la flecha verde para enviarla. La misma palabra para todo el mundo, cada día.</p>
@@ -896,7 +895,7 @@
 
   <div class="modal-overlay" id="stats-modal">
     <div class="modal">
-      <button class="modal-close" data-close>✕</button>
+      <button class="modal-close" data-close>×</button>
       <h2>Estadísticas</h2>
       <h3>Hoy</h3>
       <div class="stats-row" id="stats-today"></div>
@@ -913,7 +912,7 @@
 
   <div class="modal-overlay" id="rangos-modal">
     <div class="modal">
-      <button class="modal-close" data-close>✕</button>
+      <button class="modal-close" data-close>×</button>
       <h2>Rangos</h2>
       <p class="muted">Sube de rango acumulando puntos. <span id="rangos-reto"></span></p>
       <div id="rangos-list"></div>
@@ -922,7 +921,7 @@
 
   <div class="modal-overlay" id="arch-modal">
     <div class="modal">
-      <button class="modal-close" data-close>✕</button>
+      <button class="modal-close" data-close>×</button>
       <h2>Anteriores</h2>
       <p class="muted">Elige un día para jugar ese acertijo. Disponibles desde el 1 de enero de 2026.</p>
       <div id="archive-cal" class="archive-cal"></div>
@@ -931,7 +930,7 @@
 
   <div class="modal-overlay" id="about-modal">
     <div class="modal">
-      <button class="modal-close" data-close>✕</button>
+      <button class="modal-close" data-close>×</button>
       <h2>Sobre el juego</h2>
       <p>Un acertijo diario de palabras de <b>Cortadito News</b>. La misma palabra para todo el mundo, cada día.</p>
       <p class="muted">¡Lo esencial en un sorbo!</p>
@@ -2183,7 +2182,7 @@ window.addEventListener("load",function(){ try{ if(location.hash==="#landing"){ 
 <!-- ===== Tutorial (family standard) ===== -->
 <div class="tut-ov" id="tut-ov">
   <div class="tut-card">
-    <button class="tut-x" id="tut-x" aria-label="Cerrar">&#10005;</button>
+    <button class="tut-x" id="tut-x" aria-label="Cerrar">×</button>
     <div class="tut-track" id="tut-track"></div>
     <div class="tut-dots" id="tut-dots"></div>
     <button class="tut-next" id="tut-next">Siguiente</button>
