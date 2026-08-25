@@ -58,6 +58,15 @@
     --font-display: 'Newsreader', 'DM Serif Display', Georgia, serif;
     --font-ui:      'Helvetica Neue', Helvetica, Arial, sans-serif;
 
+    /* ---- Rank bar (DESIGN-SYSTEM.md §3.2) ----
+       The capsule's neutrals. The two marker colours are per-VARIANT and are set
+       from setColors(), because Palabreo's accent changes with the mode. */
+    --rank-outline:   #a8a29a;   /* the capsule's own outline */
+    --rank-tick-idle: #d8d3ca;   /* an upcoming milestone */
+    --rank-tick-done: #111111;   /* a passed milestone — set from JS per accent */
+    --rank-cap:       14px;      /* the score's padding inside the fill */
+    --rank-inset:     12px;      /* the score's offset when it renders outside */
+
     /* ---- Layout (fixed numbers — DESIGN-SYSTEM.md §2) ---- */
     --header-h: 56px;
     --rank-top: 66px;
@@ -79,6 +88,9 @@
     --tile-absent:   #4a443c;
     --tile-empty-bd: #3a342e;
     --key-action:    #837c72;
+    --rank-outline:   #565049;
+    --rank-tick-idle: #4a453f;
+    /* --rank-tick-done is chosen from the live accent in JS, in either theme. */
   }
 
   * { box-sizing: border-box; }
@@ -187,6 +199,7 @@
 
   /* ============================ RANK BAR ============================ */
   .rank-bar {
+    position: relative;   /* the chevron is placed against THIS box */
     display: flex; align-items: center; gap: 10px;
     padding: 8px 0; margin: 0 auto; width: min(94vw, max(400px, var(--cg-wide, 0px)));   /* STANDARD (2026-07-09): matches the shared Cascada/Racimo play-column width (min(94vw, max(400px, var(--cg-wide, 0px)))) and 8px vertical padding */
     cursor: pointer; user-select: none;
@@ -197,34 +210,131 @@
     white-space: nowrap; min-width: 88px; flex-shrink: 0;
   }
   .rank-label.at-maestro { color: var(--accent); }
-  .rank-track { position: relative; flex: 1; height: 22px; }
-  .rank-track-line {
-    position: absolute; top: 50%; left: 0; right: 0; height: 3px;
-    transform: translateY(-50%); background: var(--ink-line); border-radius: 2px; z-index: 0;
+  /* ===== THE CAPSULE (_kit/DESIGN-SYSTEM.md §3.2) =====
+     Replaces Palabreo's 3px line with ten dots and a 24px score bubble. The score
+     did not go with the bubble: it now lives inside the fill, which is where §3.2
+     puts it for every point-scored mode. ================================== */
+  .rank-track {
+    position: relative;
+    flex: 1 1 auto; min-width: 0;
+    height: 22px;
+    border-radius: 999px;
+    border: 1.5px solid var(--rank-outline);
+    background: transparent;
+    box-sizing: border-box;
+    overflow: hidden;
   }
-  .rank-track-fill {
-    position: absolute; top: 50%; left: 0; width: 0; height: 3px;
-    transform: translateY(-50%); background: var(--accent); border-radius: 2px;
-    z-index: 1; transition: width .3s ease;
+  .rank-fill {
+    position: absolute; left: 2px; top: 2px; bottom: 2px;
+    border-radius: 999px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: var(--rank-cap);
+    box-sizing: border-box;
+    transition: width 0.3s ease;
+    overflow: hidden;
   }
-  .rank-dot {
+  .rank-fill.empty { display: none; }
+
+  .rank-score {
+    position: relative; z-index: 5;
+    font-size: 11px; font-weight: 700; color: #fff;
+    font-family: var(--font-ui);
+    font-variant-numeric: tabular-nums;
+    line-height: 1; white-space: nowrap;
+    background: var(--accent); padding: 1px 3px; border-radius: 4px;
+  }
+  /* Outside the fill (score at or below zero — Palabreo's hints can take it
+     negative). A NEUTRAL plate, never --accent-2: that is the sage green, which
+     is also --success, and a losing score must not wear the winning colour. */
+  .rank-score.out {
     position: absolute; top: 50%; transform: translateY(-50%);
-    width: 6px; height: 6px; border-radius: 50%; background: var(--ink-soft); z-index: 3;
+    color: var(--ink); background: transparent; padding: 0;
   }
-  .rank-dot.passed { background: var(--ink); }
-  .rank-dot.current {
-    width: 24px; height: 24px; background: var(--accent);
-    color: #fff; font-family: var(--font-ui); font-size: 11px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,.2);
-  }
-  .rank-marker {
+  .rank-score[hidden] { display: none; }
+
+  /* Interior milestones only — ten ranks give EIGHT ticks (1..8). Rank 0 is the
+     empty bar and rank 9 the full bar, so end ticks would be redundant and would
+     sit on a different scale from the fill. */
+  .rank-tick {
     position: absolute; top: 50%; transform: translate(-50%, -50%);
-    width: 3px; height: 26px; border-radius: 2px;
-    background: var(--accent); opacity: .95; z-index: 2;
+    width: 2px; height: 54%;
+    border-radius: 1px;
+    background: var(--rank-tick-idle);
+    z-index: 2; opacity: 1;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
   }
-  .rank-marker.done { background: var(--success); }
-  .rank-chev { color: var(--ink); font-size: 12px; flex-shrink: 0; }
+  .rank-tick.passed { background: var(--rank-tick-done); }
+  .rank-tick.under-goal { opacity: 0; }
+
+  /* ===== THE TARGET MARKER =====
+     .rank-goal      — a 2px hairline INSIDE the capsule, full inner height. 2px is
+                       an integer ON PURPOSE: at 1.5px the line sits inside the
+                       track's overflow+radius clip and Chromium snaps it narrower
+                       than the chevron's stem, which is outside that clip.
+     .rank-goal-chev — a downward chevron ABOVE the capsule, its point meeting the
+                       top edge. It cannot live inside .rank-track, whose
+                       overflow:hidden clips it, so it is a sibling inside
+                       .rank-bar. Absolutely positioned: it takes no space in the
+                       flex row and nothing below it moves.
+     The old .rank-marker.done turned the marker GREEN on success. That is gone:
+     when the outcome settles, both parts disappear. The chevron always sits on the
+     page, so it always wears --rank-goal-track; only the hairline switches. */
+  .rank-goal {
+    position: absolute; top: 0; bottom: 0;
+    width: 2px;
+    transform: translateX(-50%);
+    background: var(--rank-goal-track);
+    z-index: 6; opacity: 1;
+    transition: opacity 0.18s ease, background-color 0.18s ease;
+    pointer-events: none;
+  }
+  .rank-goal.over-fill { background: var(--rank-goal-fill); }
+  .rank-goal.is-settled { opacity: 0; }
+  .rank-goal[hidden] { display: none; }
+
+  /* The triangle goes on ::before and the stem on ::after, and the clip-path must
+     NOT sit on the host: clip-path clips descendants too, so a triangle clip on
+     the host silently erases the stem. The stem is the same 2px as the hairline
+     and shares its axis, so both snap to the same device columns and the join is
+     continuous. The chevron's width is EVEN so the stem, centred with left:50%,
+     lands on an integer rather than a half-pixel. 10x7 reads as a pointer; the
+     8x4 it replaced was a 2:1 sliver that read as a notch. */
+  .rank-goal-chev {
+    position: absolute;
+    width: 10px; height: 7px;
+    background: transparent;
+    transform: translateX(-50%);
+    z-index: 7; opacity: 1;
+    transition: opacity 0.18s ease;
+    pointer-events: none;
+  }
+  .rank-goal-chev::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--rank-goal-track);
+    -webkit-clip-path: polygon(0 0, 100% 0, 50% 100%);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+  .rank-goal-chev::after {
+    content: ''; position: absolute; left: 50%; top: 100%;
+    width: 2px; height: 2px;
+    transform: translateX(-50%);
+    background: var(--rank-goal-track);
+  }
+  .rank-goal-chev.is-settled { opacity: 0; }
+  .rank-goal-chev[hidden] { display: none; }
+
+  /* Until the pixel pass has measured the track, nothing on the bar has a real x:
+     every child would fall back to left:auto and pile up on the capsule's left
+     edge, and the chevron — absolutely positioned in a FLEX row — would land at
+     the row's content-box start, over the rank label. So the contents are not
+     painted until placeRank() has actually measured. */
+  .rank-bar.rank-unplaced .rank-track > *,
+  .rank-bar.rank-unplaced .rank-goal-chev { visibility: hidden; }
+
+  .rank-chev { color: var(--ink); font-size: 12px; flex-shrink: 0; transition: transform .2s; }
+  .rank-bar[aria-expanded="true"] .rank-chev { transform: rotate(180deg); }
 
   /* ============================ BUTTONS ============================ */
   button.btn {
@@ -589,6 +699,21 @@
   .tut-swap-a{ animation:tutSwapA 3.6s ease infinite; position:relative; z-index:2; box-shadow:0 0 0 3px var(--ink); }
   .tut-swap-b{ animation:tutSwapB 3.6s ease infinite; }
   @keyframes tutBoardWin{ 0%,30%{opacity:.55} 45%,100%{opacity:1} }
+
+  /* ===== DESKTOP IN-PLAY TRACK (_kit §3.2) =====
+     The same 30px capsule Sudoku and Racimo use at >=1024px. Height and padding
+     only — no new colours, no reflow of the board: .rank-bar is `flex: none` in a
+     column, so its own padding is the only thing that moves, and the chevron is
+     out of flow. The pixel pass reads the track's live height and the chevron's
+     computed height, so both re-place themselves at the breakpoint. */
+  @media (min-width: 1024px) {
+    body.game-active .rank-bar   { padding: 12px 0; gap: 20px; }
+    body.game-active .rank-label { font-size: 17px; letter-spacing: 2.4px; min-width: 158px; }
+    body.game-active .rank-track { height: 30px; --rank-cap: 16px; --rank-inset: 16px; }
+    body.game-active .rank-goal-chev { width: 12px; height: 9px; }
+    body.game-active .rank-score { font-size: 14px; }
+    body.game-active .rank-chev  { font-size: 18px; }
+  }
 </style>
 
 <style id="rotate-lock-css">
@@ -794,12 +919,13 @@
 
   <!-- ============================ RANK BAR + BOARD ============================ -->
   <main>
-    <div class="rank-bar" id="rank-bar" role="button" tabindex="0" aria-label="Ver rangos">
+    <div class="rank-bar rank-unplaced" id="rank-bar" role="button" tabindex="0"
+         aria-expanded="false" aria-controls="rangos-modal" aria-label="Ver rangos">
       <span class="rank-label" id="rank-label">Debutante</span>
       <div class="rank-track" id="rank-track">
-        <div class="rank-track-line"></div>
+        <div class="rank-fill empty" id="rank-fill"><span class="rank-score" id="rank-score">0</span></div>
       </div>
-      <span class="rank-chev">▾</span>
+      <span class="rank-chev" aria-hidden="true">▾</span>
     </div>
 
     <div class="top-spacer"></div>
@@ -887,7 +1013,7 @@
       <h3>Pistas</h3>
       <p class="muted">¿Atascado? Toca el botón <b>💡 Pista</b> bajo el tablero y el juego te revela <b>una letra correcta en su lugar</b> — en <b>Clásico</b> aparece en los recuadros bajo el tablero y se marca en el teclado; en <b>Cuarteto</b> además la letra queda <b>fijada en su tablero</b> (en verde punteado) hasta que la escribas, y la etiqueta <b>T1</b>–<b>T4</b> sobre la pista te indica de qué <b>tablero</b> es la letra (la <b>T</b> es de «Tablero»); en <b>Trenza</b> te <b>coloca una casilla</b> en su sitio. Cada pista que uses te <b style="color:var(--accent)">resta puntos</b> — y tu puntaje <b>puede quedar en negativo</b>, así que úsalas con cuidado. Hay un número limitado de pistas por día.</p>
       <h3>Rangos y Reto del día</h3>
-      <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> Toca la barra de rango para ver todos los rangos.</p>
+      <p class="muted">Tus puntos te hacen subir por diez rangos, de <b>Debutante</b> a <b style="color:var(--accent)">Maestro/a</b>. Resolver en <b>uno o dos intentos</b> te lleva a <b style="color:var(--accent)">Maestro/a</b>. Cada día hay además un <b style="color:var(--accent)">Reto del día</b>: una meta de puntos igual para todo el mundo — crúzala y celebra con un <b style="color:var(--accent)">¡Buen sorbo!</b> El chevrón y la línea en la barra de rangos marcan ese objetivo: siguen ahí mientras la partida está en juego, aunque ya hayas pasado la meta — una pista puede bajarte otra vez. Cuando la partida termina, desaparecen. Toca la barra de rango para ver todos los rangos.</p>
       <h3>Sobre las palabras</h3>
       <p class="muted">Las palabras del juego se eligen únicamente por su validez en español. Algunas pueden tener sentidos regionales, coloquiales o de doble interpretación; el juego nunca pretende dobles sentidos vulgares, sexuales ni ofensivos.</p>
     </div>
@@ -1073,11 +1199,54 @@ const SAGE_GREEN='#548C4C';
 function _rgb(c){c=c.replace('#','');return [parseInt(c.slice(0,2),16),parseInt(c.slice(2,4),16),parseInt(c.slice(4,6),16)];}
 function _hex(a){return '#'+a.map(x=>Math.max(0,Math.min(255,Math.round(x))).toString(16).padStart(2,'0')).join('');}
 function _mix(a,b,t){const A=_rgb(a),B=_rgb(b);return _hex(A.map((x,i)=>x+(B[i]-x)*t));}
+/* Relative luminance / WCAG ratio, for the one tick colour that has to be chosen
+   at runtime because the accent changes with the variant AND the theme. */
+function _lum(hex){ return _rgb(hex).map(v=>v/255).map(v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055,2.4))
+  .reduce((s,v,i)=>s+v*[0.2126,0.7152,0.0722][i],0); }
+function _ratio(a,b){ const L=[_lum(a),_lum(b)].sort((x,y)=>y-x); return (L[0]+0.05)/(L[1]+0.05); }
+function _rankTickInk(accent){ return _ratio('#111111', accent) >= 3.2 ? '#111111' : '#ffffff'; }
 function setColors(v){
   const c=VARIANTS[v]||VARIANTS.clasico; const dark=document.body.getAttribute('data-theme')==='black';
   let a=c.accent||'#CF2A2A', a2=SAGE_GREEN;
   if(dark){ a=_mix(a,'#ffffff',0.22); a2=_mix(a2,'#ffffff',0.20); }
   const s=document.body.style;
+  /* The rank marker's two colours (_kit §3.2). STATIC — derived once per variant
+     per theme and looked up here, never computed at render time.
+       --rank-goal-track  over the EMPTY track, and the chevron in every state,
+                          because the chevron always sits on the page. It is the
+                          variant's own --accent, unless the accent is itself under
+                          3.2:1 on that page — TRENZA LIGHT is the one such face in
+                          the whole system (#D99F3B measures 2.34:1 on white), so it
+                          falls back to --accent-deep #b28230 (3.43:1). No new
+                          colour enters the palette.
+       --rank-goal-fill   over the FILL: the variant's own accent ramp walked toward
+                          white or black, whichever clears 4.5:1 with the SMALLER
+                          mix. 4.5 rather than 3.2 because this line crosses the
+                          fill for as long as the fill covers it and 3.2 was not
+                          legible at phone size. The mixes are heavy because the
+                          ceiling is low — a saturated mid-luminance accent tops out
+                          near 5:1 even at pure white or black.
+       NOT --accent-2. It is the sage #548C4C, which IS --success, at 1.07-1.71:1
+       against the fill: a pending marker would wear the winning colour and be
+       invisible besides.
+     Measured (contrast vs the fill · dE00 from --success · ceiling):
+       Clásico  light #CF2A2A -> #faebeb  4.52  dE 43  ceil 5.23
+       Clásico  dark  #da5959 -> #301313  4.52  dE 59  ceil 5.55
+       Cuarteto light #d9633b -> #35180e  4.50  dE 48  ceil 5.80
+       Cuarteto dark  #e18566 -> #4d2d23  4.52  dE 51  ceil 7.75
+       Trenza   light #D99F3B -> #513b16  4.52  dE 34  ceil 8.97
+       Trenza   dark  #e1b466 -> #5a4829  4.56  dE 38  ceil 10.92 */
+  const GOAL_TINTS = {
+    clasico: { light: { track:'#CF2A2A', fill:'#faebeb' }, dark: { track:'#da5959', fill:'#301313' } },
+    quordle: { light: { track:'#d9633b', fill:'#35180e' }, dark: { track:'#e18566', fill:'#4d2d23' } },
+    waffle:  { light: { track:'#b28230', fill:'#513b16' }, dark: { track:'#e1b466', fill:'#5a4829' } }
+  };
+  const gt = (GOAL_TINTS[v] || GOAL_TINTS.clasico)[dark ? 'dark' : 'light'];
+  s.setProperty('--rank-goal-track', gt.track);
+  s.setProperty('--rank-goal-fill',  gt.fill);
+  /* A passed milestone sits ON the fill: black unless black fails 3.2:1 against
+     this accent, in which case white. */
+  s.setProperty('--rank-tick-done', _rankTickInk(a));
   s.setProperty('--accent', a);
   s.setProperty('--tile-present', a);   // tiles follow the variant accent (avoid :root var() indirection)
   s.setProperty('--accent-deep', _mix(a,'#000000', dark?0.12:0.18));
@@ -1707,39 +1876,240 @@ function scoreTrackPct(s){
   }
   return 100;
 }
-function renderRank(){
+/* ---- the day's challenge, in THREE states (_kit §3.2) ----
+   THE RULE: show the marker while the challenge is unresolved AND still
+   achievable; remove it once the outcome is settled, whichever way.
+
+   Palabreo is a shape of its own. It counts UP as letters are found but DOWN when
+   pistas are spent (Clásico compounds 8/11/14, the others are flat 8), and the
+   score reaches -33 / -48 / -32. So crossing RETO mid-game settles NOTHING: the
+   next pista can take you back under. The outcome is settled only when the round
+   ends, and the marker stays visible until then whichever side of the target the
+   score is on.
+
+   `finished` is the settle point, and it is the SAME fact the award reads.
+   recordStats() returns early unless `finished`, then extends the reto streak on
+   `score >= RETO` — it does NOT require `solved`, and this mirrors it exactly
+   rather than inventing a stricter rule. That distinction is real in Cuarteto,
+   whose quordleScore() is a pure step function of boards solved (0/38/56/68, then
+   70+bonus for all four): three of four scores 68 and so wins any target <= 68,
+   which is 172 of 365 days. That is Cuarteto's partial-credit design, and the bar
+   must not quietly disagree with it. It is unreachable in the other two — Clásico
+   caps at 23 without the solve bonus against targets of 55-80, and Trenza's
+   45-point swap penalty caps a non-completing finish at 68 against 85/90. */
+function retoState(){
+  if(!finished) return 'pending';                 /* still in play, still open */
+  return score >= RETO ? 'achieved' : 'failed';   /* settled, exactly as the award reads it */
+}
+const RETO_WORD = { pending:'pendiente', achieved:'logrado', failed:'no alcanzado' };
+/* The tick belongs to 'achieved' alone: 'pending' has not happened yet and
+   'failed' is not a win. */
+const RETO_MARK = { pending:'', achieved:' ✓', failed:' ✕' };
+
+/* ---- the pixel pass (_kit §3.2) ----
+   EVERY x on the bar is RANK_PAD + fraction * usable, where usable is
+   rankContentWidth(track) - 2*RANK_PAD. One formula, one origin, one span: the
+   fill leaves the same 2px gap on both sides, the ticks are measured over the
+   same width so the fill still meets its own milestone exactly, and the marker
+   lands exactly on the target. Positions are PIXELS, so a resize must MOVE them,
+   not merely re-test them. */
+const RANK_PAD = 2, RANK_TICK_GAP = 6, RANK_SCORE_GAP = 4, RANK_OUT_PAD = 12, RANK_FIRST_CLEAR = 8;
+/* The capsule's REAL content width, fractional. NOT clientWidth: that is an
+   integer, so it rounds the content width by up to half a pixel, and because the
+   left end is pinned at RANK_PAD the whole error lands on the RIGHT end. */
+function rankContentWidth(track){
+  const cs=getComputedStyle(track);
+  return track.getBoundingClientRect().width
+       - (parseFloat(cs.borderLeftWidth)||0)
+       - (parseFloat(cs.borderRightWidth)||0);
+}
+let _rankState=null, _rankRO=null, _rankRetry=0, _rankRetryTries=0;
+
+/* The pass needs a MEASURABLE track, and the observer that brings it back must be
+   installed BEFORE the width test — a bar first laid out at width 0 otherwise
+   never gets a second chance. Two independent recovery paths, plus the direct
+   call from applyVariant(), so the common path is synchronous. */
+function ensureRankObserver(){
+  if(_rankRO || typeof ResizeObserver!=='function') return;
+  const track=document.getElementById('rank-track'); if(!track) return;
+  try{ _rankRO=new ResizeObserver(function(){ placeRank(); }); _rankRO.observe(track); }
+  catch(e){ _rankRO=null; }
+}
+function scheduleRankPlacement(){
+  if(_rankRetry || typeof requestAnimationFrame!=='function') return;
+  _rankRetryTries=0;
+  const step=function(){
+    _rankRetry=0;
+    if(placeRankNow()) return;
+    if(++_rankRetryTries>120) return;   /* ~2s, then the observer has it */
+    _rankRetry=requestAnimationFrame(step);
+  };
+  _rankRetry=requestAnimationFrame(step);
+}
+function placeRank(){
+  ensureRankObserver();
+  if(placeRankNow()) return true;
+  scheduleRankPlacement();
+  return false;
+}
+function placeRankNow(){
+  const st=_rankState; if(!st) return false;
   const track=document.getElementById('rank-track');
-  track.innerHTML='<div class="rank-track-line"></div><div class="rank-track-fill"></div>';
-  const curIdx=rankIndex(score), done=score>=RETO, slots=RANK_THRESHOLDS.length-1;
-  // plum fill + bubble follow the SCORE continuously (same mapping as
-  // the reto marker) so the bubble meets the marker at exactly RETO pts
-  const scorePct=scoreTrackPct(score);
-  track.querySelector('.rank-track-fill').style.width=scorePct+'%';
-  RANK_THRESHOLDS.forEach((th,i)=>{
-    const dot=document.createElement('div');
-    dot.className='rank-dot'+(score>=th?' passed':'');
-    const w=6;
-    if(i===0) dot.style.left='0';
-    else if(i===slots) dot.style.left='calc(100% - '+w+'px)';
-    else dot.style.left='calc('+((i/slots)*100)+'% - '+(w/2)+'px)';
-    track.appendChild(dot);
+  const bar=document.getElementById('rank-bar');
+  if(!track||!bar) return false;
+  const fill=track.querySelector('.rank-fill');
+  const sc=track.querySelector('.rank-score')||bar.querySelector('.rank-score');
+  if(!fill||!sc) return false;
+  const w=rankContentWidth(track); if(!(w>0)) return false;
+  const usable=Math.max(0, w-2*RANK_PAD);
+  /* Every x below is measured from the CONTENT box, because that is what
+     rankContentWidth() spans — so anything derived from a bounding rect (which is
+     the BORDER box) has to have the border taken back off. */
+  const borderL=parseFloat(getComputedStyle(track).borderLeftWidth)||0;
+
+  const ticks=track.querySelectorAll('.rank-tick');
+  ticks.forEach(function(t){ t.style.left=(RANK_PAD+(usable*(+t.dataset.i))/st.slots)+'px'; });
+
+  /* A full bar leaves RANK_PAD on the right exactly as on the left. A percentage
+     width here is what made the gap asymmetric elsewhere. */
+  const empty = st.frac<=0.005;
+  fill.classList.toggle('empty', empty);
+  fill.style.width=(empty?0:st.frac*usable)+'px';
+  const fillPx=RANK_PAD+st.frac*usable;
+
+  /* The score must never be left inside a display:none fill, so it is reparented
+     to the track whenever it renders outside. */
+  sc.classList.toggle('out', empty);
+  if(empty && sc.parentNode!==track) track.appendChild(sc);
+  if(!empty && sc.parentNode!==fill) fill.appendChild(sc);
+  sc.style.left=''; sc.style.marginRight='';
+  if(empty){
+    const firstTick = st.slots>0 ? usable/st.slots : 0;
+    sc.style.left=(Math.max(fillPx, RANK_PAD+firstTick+RANK_FIRST_CLEAR)+RANK_OUT_PAD)+'px';
+  }
+
+  const goalEl=track.querySelector('.rank-goal');
+  const chevEl=bar.querySelector('.rank-goal-chev');
+  const markerVisible = st.retoState==='pending';
+  /* Position the marker on EVERY render, settled or not: leaving it unpositioned
+     parks it at left:0, half outside the capsule, invisible only because the track
+     clips overflow — a coincidence to rely on rather than a rule. */
+  const goalPx=RANK_PAD+st.goalFrac*usable;
+  if(goalEl){
+    goalEl.style.left=goalPx+'px';
+    goalEl.classList.toggle('over-fill', st.frac>=st.goalFrac);
+    if(chevEl){
+      const chevH=parseFloat(getComputedStyle(chevEl).height)||4;
+      /* goalPx is measured inside the capsule's border (the content box) while the
+         rect is the border box — add the border back. And use rects, never
+         offsetLeft/offsetTop, which return ROUNDED INTEGERS and would drop the
+         chevron half a pixel off its own hairline. */
+      const tb=track.getBoundingClientRect(), bb=bar.getBoundingClientRect();
+      chevEl.style.left=((tb.left-bb.left)+borderL+goalPx)+'px';
+      chevEl.style.top =((tb.top-bb.top)-chevH)+'px';
+    }
+  }
+  /* Collisions, in PIXELS (_kit §3.2). The marker is drawn above the score
+     (z-index 6 over 5), so where it lands inside the score's plate the score is
+     nudged left to clear it by RANK_SCORE_GAP rather than being struck through.
+     Palabreo needs this more than the other games: its fill can sit anywhere
+     relative to the target, so a score just past the marker is the common case,
+     not an edge one. */
+  /* content-box coordinates, to match the ticks and the marker */
+  function scoreBox(){
+    if(sc.hidden) return null;
+    const tb=track.getBoundingClientRect(), sb=sc.getBoundingClientRect();
+    return sb.width>0 ? { left: sb.left-tb.left-borderL, right: sb.right-tb.left-borderL } : null;
+  }
+  let sBox=scoreBox();
+  if(sBox && markerVisible && !sc.classList.contains('out') &&
+     goalPx > sBox.left-RANK_SCORE_GAP && goalPx < sBox.right+RANK_SCORE_GAP){
+    sc.style.marginRight=(sBox.right-goalPx+RANK_SCORE_GAP)+'px';
+    /* The nudge MOVES the plate, so anything tested against it has to be tested
+       against where it ended up, not where it started. Re-measure. */
+    sBox=scoreBox();
+  }
+  /* No marker on screen => nothing may be hidden on its account, so any tick it
+     was covering is restored automatically.
+     A tick that the SCORE covers is hidden on the same principle, and this applies
+     whether the score renders inside the fill or outside it. Inside, the plate's
+     own background already hides a tick fully behind it — but a tick straddling
+     the plate's EDGE keeps a sliver on the fill, and a 2px black sliver beside a
+     number reads as a stray apostrophe rather than as a milestone. Hiding costs
+     nothing (a covered tick was invisible anyway) and it is the only way to get
+     rid of the sliver, since the tick and the plate are the same few pixels wide.
+     Both bounds are content-box, as is `c`. */
+  ticks.forEach(function(t){
+    const c=parseFloat(t.style.left)||0;
+    let hide = markerVisible && Math.abs(c-goalPx)<RANK_TICK_GAP;
+    if(sBox && c>sBox.left-RANK_SCORE_GAP && c<sBox.right+RANK_SCORE_GAP) hide=true;
+    t.classList.toggle('under-goal', hide);
   });
-  const bubble=document.createElement('div');
-  bubble.className='rank-dot current'+(curIdx===TOP?' at-maestro':'');
-  bubble.textContent=score;
-  bubble.style.left='calc('+scorePct+'% - 12px)';   /* fallback */
-  bubble.style.left='clamp(0px, calc('+scorePct+'% - 12px), calc(100% - 24px))';
-  bubble.style.zIndex='5';
-  track.appendChild(bubble);
-  const mk=document.createElement('div'); mk.className='rank-marker'+(done?' done':'');
-  mk.style.left=retoTrackPct()+'%'; track.appendChild(mk);
+
+  bar.classList.remove('rank-unplaced');
+  return true;
+}
+
+function renderRank(){
+  const curIdx=rankIndex(score), slots=RANK_THRESHOLDS.length-1;
+  const rs=retoState();
+  const track=document.getElementById('rank-track');
+  const bar=document.getElementById('rank-bar');
+  /* Nothing is painted until placeRank() has measured the track: fill, ticks,
+     marker and chevron appear together, on one scale, or not at all. */
+  if(bar) bar.classList.add('rank-unplaced');
+
+  /* The scale keeps Palabreo's own interpolation. scoreTrackPct() and
+     retoTrackPct() already walk RANK_THRESHOLDS and are NOT replaced by a flat
+     percentage; they are only converted from a percentage of the track to a
+     fraction of the capsule's usable inner width. */
+  track.innerHTML='<div class="rank-fill empty" id="rank-fill">'
+                + '<span class="rank-score" id="rank-score"></span></div>';
+  const scoreEl=track.querySelector('.rank-score');
+
+  /* Interior milestones only: 1..slots-1, which is EIGHT ticks for ten ranks. */
+  for(let i=1;i<slots;i++){
+    const t=document.createElement('div');
+    t.className='rank-tick'+(score>=RANK_THRESHOLDS[i]?' passed':'');
+    t.dataset.i=String(i);
+    t.title=RANK_NAMES[i]+' — '+RANK_THRESHOLDS[i]+'+ pts';
+    track.appendChild(t);
+  }
+
+  const settled = rs!=='pending';
+  const goalEl=document.createElement('div');
+  goalEl.className='rank-goal'+(settled?' is-settled':'');
+  goalEl.title='Reto del día — '+RETO+' pts';
+  track.appendChild(goalEl);
+
+  /* the chevron lives OUTSIDE the track — the track clips its own overflow */
+  let chevEl=bar.querySelector('.rank-goal-chev');
+  if(!chevEl){ chevEl=document.createElement('div'); chevEl.className='rank-goal-chev'; bar.appendChild(chevEl); }
+  chevEl.className='rank-goal-chev'+(settled?' is-settled':'');
+
+  scoreEl.textContent=score;
+
+  _rankState={ frac:scoreTrackPct(score)/100, goalFrac:retoTrackPct()/100,
+               retoState:rs, slots:slots };
+  placeRank();
+
   const lbl=document.getElementById('rank-label');
   lbl.textContent=RANK_NAMES[curIdx]; lbl.classList.toggle('at-maestro', curIdx===TOP);
+
+  /* The accessible name is the primary channel: rank, score, and the challenge in
+     its own three states — 'logrado' and 'no alcanzado' are different facts and
+     must not both read as merely "not pending". */
+  bar.setAttribute('aria-label',
+    'Rango '+RANK_NAMES[curIdx]+', '+score+' puntos. Reto del día '+RETO_WORD[rs]+'. Ver rangos.');
+
   const st=document.getElementById('stat-today'); if(st) st.textContent=`${score} pts · ${RANK_NAMES[curIdx]}`;
   renderHints();
 }
 function renderRangos(){
-  document.getElementById('rangos-reto').innerHTML = `El Reto de hoy es <strong style="color:var(--accent)">${RETO} pts</strong>.`;
+  /* The mark states the OUTCOME, and the tick means won — which needs a finished
+     round, not merely a score currently above the target. */
+  document.getElementById('rangos-reto').innerHTML =
+    `El Reto de hoy es <strong style="color:var(--accent)">${RETO} pts</strong>${RETO_MARK[retoState()]}.`;
   const box=document.getElementById('rangos-list'); const curIdx=rankIndex(score);
   let html='';
   for(let i=TOP;i>=0;i--){           // highest rank at the top
@@ -2099,8 +2469,34 @@ function boot(){
     document.querySelectorAll('.landing-tab').forEach(b=>b.addEventListener('click', ()=>{ if(b.classList.contains('is-soon'))return; selectVariant(b.dataset.variant); }));
     document.getElementById('home-btn').addEventListener('click', ()=>{ location.href='https://cortadito.games/'; });   // Home = back to the hub (same tab)
     window.addEventListener('popstate', ()=>{ if(document.body.classList.contains('game-active')){ closeModals(); toggleMenu(false); document.body.classList.remove('game-active'); } });   // Back inside the game = landing
-    document.getElementById('rank-bar').addEventListener('click', ()=>{ renderRangos(); openModal('rangos-modal'); });
-    document.getElementById('rank-bar').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); e.stopPropagation(); renderRangos(); openModal('rangos-modal'); } });
+    /* The bar is a button that opens a panel, so it must SAY it opens a panel and
+       say whether the panel is open. aria-expanded was absent entirely, so the
+       chevron's rotation had nothing driving it. */
+    const _rankBarEl=document.getElementById('rank-bar');
+    function openRangos(){ renderRangos(); openModal('rangos-modal'); _rankBarEl.setAttribute('aria-expanded','true'); }
+    function closeRangos(){ closeModals(); _rankBarEl.setAttribute('aria-expanded','false'); _rankBarEl.focus(); }
+    _rankBarEl.addEventListener('click', openRangos);
+    _rankBarEl.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter'||e.key===' '||e.key==='Spacebar'){ e.preventDefault(); e.stopPropagation(); openRangos(); }
+    });
+    /* Escape closes the panel and returns focus to the bar that opened it. */
+    document.addEventListener('keydown', (e)=>{
+      if(e.key!=='Escape'&&e.key!=='Esc') return;
+      const ov=document.getElementById('rangos-modal');
+      if(ov&&ov.classList.contains('open')){ e.preventDefault(); closeRangos(); }
+    });
+    /* Any other route out of the panel must keep aria-expanded honest. */
+    (function(){
+      const ov=document.getElementById('rangos-modal');
+      if(!ov||typeof MutationObserver!=='function') return;
+      new MutationObserver(()=>{ _rankBarEl.setAttribute('aria-expanded', ov.classList.contains('open')?'true':'false'); })
+        .observe(ov,{attributes:true,attributeFilter:['class']});
+    })();
+    /* Positions on the bar are PIXELS, so a viewport change must move them. The
+       ResizeObserver catches the track's own box; these catch a breakpoint that
+       moves the track without resizing it. */
+    window.addEventListener('resize', ()=>{ placeRank(); });
+    window.addEventListener('orientationchange', ()=>{ placeRank(); });
     /* preventDefault: several of these triggers are <a href="#">. Letting the
        browser follow the fragment fires popstate, and the "Back inside the game
        = landing" handler two lines up then closes the modal we just opened and
