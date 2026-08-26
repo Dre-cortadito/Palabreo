@@ -236,22 +236,29 @@
   }
   .rank-fill.empty { display: none; }
 
+  /* The score is a COLUMN between the rank label and the capsule, not a plate
+     riding inside the fill (_kit §3.2). Each element then has one job: the label
+     says the level, this says the score, the capsule says progress, the marker
+     says the target, the ▾ opens Rangos. Nothing moves with the fill, so the
+     plate, the reparenting, the outside-fill state, the marker nudge and the
+     score-vs-tick pass are gone — a family of overlap bugs that cannot recur
+     because the geometry no longer overlaps.
+     Palabreo needs this more than most: its pistas take the score NEGATIVE (-33
+     Clásico, -48 Cuarteto, -32 Trenza), which the old plate had to handle as a
+     separate outside-the-fill state. Here -48 is just a number. Fixed 4ch and
+     tabular-nums, so 0, 100 and -48 all sit on the same right edge and the
+     capsule never changes width as the score does. */
   .rank-score {
-    position: relative; z-index: 5;
-    font-size: 11px; font-weight: 700; color: #fff;
+    flex: 0 0 auto;
+    min-width: 4ch;
+    text-align: right;
     font-family: var(--font-ui);
+    font-size: 11px; font-weight: 700;
     font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+    color: var(--ink);
     line-height: 1; white-space: nowrap;
-    background: var(--accent); padding: 1px 3px; border-radius: 4px;
   }
-  /* Outside the fill (score at or below zero — Palabreo's hints can take it
-     negative). A NEUTRAL plate, never --accent-2: that is the sage green, which
-     is also --success, and a losing score must not wear the winning colour. */
-  .rank-score.out {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    color: var(--ink); background: transparent; padding: 0;
-  }
-  .rank-score[hidden] { display: none; }
 
   /* Interior milestones only — ten ranks give EIGHT ticks (1..8). Rank 0 is the
      empty bar and rank 9 the full bar, so end ticks would be redundant and would
@@ -707,12 +714,18 @@
      out of flow. The pixel pass reads the track's live height and the chevron's
      computed height, so both re-place themselves at the breakpoint. */
   @media (min-width: 1024px) {
-    body.game-active .rank-bar   { padding: 12px 0; gap: 20px; }
-    body.game-active .rank-label { font-size: 17px; letter-spacing: 2.4px; min-width: 158px; }
+    body.game-active .rank-bar   { padding: 12px 0; }
     body.game-active .rank-track { height: 30px; --rank-cap: 16px; --rank-inset: 16px; }
     body.game-active .rank-goal-chev { width: 12px; height: 9px; }
-    body.game-active .rank-score { font-size: 14px; }
     body.game-active .rank-chev  { font-size: 18px; }
+    /* NOT the enlarged label, gap and score Sudoku and Racimo use at this
+       breakpoint. Their desktop layouts widen the whole play column — Racimo's bar
+       is 1180px at a 1280px viewport, Sudoku's 1100px — so a 158px label is a
+       small share of it. Palabreo's play column stays 400px at every width, so
+       the same enlargement ate the capsule: at 1280px it measured 141px, NARROWER
+       than the 251px it gets at 430px, which is plainly wrong. The 30px in-play
+       track is about legibility and stays; the label, gap and score keep their
+       mobile size so the capsule keeps the width. */
   }
 </style>
 
@@ -922,8 +935,11 @@
     <div class="rank-bar rank-unplaced" id="rank-bar" role="button" tabindex="0"
          aria-expanded="false" aria-controls="rangos-modal" aria-label="Ver rangos">
       <span class="rank-label" id="rank-label">Debutante</span>
+      <!-- aria-hidden: the bar's accessible name already announces "N puntos", so a
+           screen reader would otherwise read the number twice. -->
+      <span class="rank-score" id="rank-score" aria-hidden="true">0</span>
       <div class="rank-track" id="rank-track">
-        <div class="rank-fill empty" id="rank-fill"><span class="rank-score" id="rank-score">0</span></div>
+        <div class="rank-fill empty" id="rank-fill"></div>
       </div>
       <span class="rank-chev" aria-hidden="true">▾</span>
     </div>
@@ -1913,7 +1929,7 @@ const RETO_MARK = { pending:'', achieved:' ✓', failed:' ✕' };
    same width so the fill still meets its own milestone exactly, and the marker
    lands exactly on the target. Positions are PIXELS, so a resize must MOVE them,
    not merely re-test them. */
-const RANK_PAD = 2, RANK_TICK_GAP = 6, RANK_SCORE_GAP = 4, RANK_OUT_PAD = 12, RANK_FIRST_CLEAR = 8;
+const RANK_PAD = 2, RANK_TICK_GAP = 6;
 /* The capsule's REAL content width, fractional. NOT clientWidth: that is an
    integer, so it rounds the content width by up to half a pixel, and because the
    left end is pinned at RANK_PAD the whole error lands on the RIGHT end. */
@@ -1958,8 +1974,7 @@ function placeRankNow(){
   const bar=document.getElementById('rank-bar');
   if(!track||!bar) return false;
   const fill=track.querySelector('.rank-fill');
-  const sc=track.querySelector('.rank-score')||bar.querySelector('.rank-score');
-  if(!fill||!sc) return false;
+  if(!fill) return false;
   const w=rankContentWidth(track); if(!(w>0)) return false;
   const usable=Math.max(0, w-2*RANK_PAD);
   /* Every x below is measured from the CONTENT box, because that is what
@@ -1975,18 +1990,6 @@ function placeRankNow(){
   const empty = st.frac<=0.005;
   fill.classList.toggle('empty', empty);
   fill.style.width=(empty?0:st.frac*usable)+'px';
-  const fillPx=RANK_PAD+st.frac*usable;
-
-  /* The score must never be left inside a display:none fill, so it is reparented
-     to the track whenever it renders outside. */
-  sc.classList.toggle('out', empty);
-  if(empty && sc.parentNode!==track) track.appendChild(sc);
-  if(!empty && sc.parentNode!==fill) fill.appendChild(sc);
-  sc.style.left=''; sc.style.marginRight='';
-  if(empty){
-    const firstTick = st.slots>0 ? usable/st.slots : 0;
-    sc.style.left=(Math.max(fillPx, RANK_PAD+firstTick+RANK_FIRST_CLEAR)+RANK_OUT_PAD)+'px';
-  }
 
   const goalEl=track.querySelector('.rank-goal');
   const chevEl=bar.querySelector('.rank-goal-chev');
@@ -2009,41 +2012,15 @@ function placeRankNow(){
       chevEl.style.top =((tb.top-bb.top)-chevH)+'px';
     }
   }
-  /* Collisions, in PIXELS (_kit §3.2). The marker is drawn above the score
-     (z-index 6 over 5), so where it lands inside the score's plate the score is
-     nudged left to clear it by RANK_SCORE_GAP rather than being struck through.
-     Palabreo needs this more than the other games: its fill can sit anywhere
-     relative to the target, so a score just past the marker is the common case,
-     not an edge one. */
-  /* content-box coordinates, to match the ticks and the marker */
-  function scoreBox(){
-    if(sc.hidden) return null;
-    const tb=track.getBoundingClientRect(), sb=sc.getBoundingClientRect();
-    return sb.width>0 ? { left: sb.left-tb.left-borderL, right: sb.right-tb.left-borderL } : null;
-  }
-  let sBox=scoreBox();
-  if(sBox && markerVisible && !sc.classList.contains('out') &&
-     goalPx > sBox.left-RANK_SCORE_GAP && goalPx < sBox.right+RANK_SCORE_GAP){
-    sc.style.marginRight=(sBox.right-goalPx+RANK_SCORE_GAP)+'px';
-    /* The nudge MOVES the plate, so anything tested against it has to be tested
-       against where it ended up, not where it started. Re-measure. */
-    sBox=scoreBox();
-  }
-  /* No marker on screen => nothing may be hidden on its account, so any tick it
-     was covering is restored automatically.
-     A tick that the SCORE covers is hidden on the same principle, and this applies
-     whether the score renders inside the fill or outside it. Inside, the plate's
-     own background already hides a tick fully behind it — but a tick straddling
-     the plate's EDGE keeps a sliver on the fill, and a 2px black sliver beside a
-     number reads as a stray apostrophe rather than as a milestone. Hiding costs
-     nothing (a covered tick was invisible anyway) and it is the only way to get
-     rid of the sliver, since the tick and the plate are the same few pixels wide.
-     Both bounds are content-box, as is `c`. */
+  /* The only collision left on the bar is the marker over a milestone tick. The
+     score used to be the other one — riding inside the fill, it could be struck
+     through by the marker or clip a tick at its plate's edge, and it needed a
+     nudge, a re-measure and a hide pass to stay legible. Out in its own column,
+     none of that geometry exists.
+     No marker on screen => nothing may be hidden on its account. */
   ticks.forEach(function(t){
     const c=parseFloat(t.style.left)||0;
-    let hide = markerVisible && Math.abs(c-goalPx)<RANK_TICK_GAP;
-    if(sBox && c>sBox.left-RANK_SCORE_GAP && c<sBox.right+RANK_SCORE_GAP) hide=true;
-    t.classList.toggle('under-goal', hide);
+    t.classList.toggle('under-goal', markerVisible && Math.abs(c-goalPx)<RANK_TICK_GAP);
   });
 
   bar.classList.remove('rank-unplaced');
@@ -2063,9 +2040,9 @@ function renderRank(){
      retoTrackPct() already walk RANK_THRESHOLDS and are NOT replaced by a flat
      percentage; they are only converted from a percentage of the track to a
      fraction of the capsule's usable inner width. */
-  track.innerHTML='<div class="rank-fill empty" id="rank-fill">'
-                + '<span class="rank-score" id="rank-score"></span></div>';
-  const scoreEl=track.querySelector('.rank-score');
+  track.innerHTML='<div class="rank-fill empty" id="rank-fill"></div>';
+  /* the score is a sibling column, so rebuilding the track never touches it */
+  const scoreEl=document.getElementById('rank-score');
 
   /* Interior milestones only: 1..slots-1, which is EIGHT ticks for ten ranks. */
   for(let i=1;i<slots;i++){
