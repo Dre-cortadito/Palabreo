@@ -210,6 +210,11 @@
     white-space: nowrap; min-width: 88px; flex-shrink: 0;
   }
   .rank-label.at-maestro { color: var(--accent); }
+  /* With the bar's 10px gap this makes the 6px label-to-score gutter on narrow
+     layouts (_kit §3.2). 880px and up keeps this bar's established 10px. */
+  @media (max-width: 879.98px) {
+    .rank-label { margin-right: -4px; }
+  }
   /* ===== THE CAPSULE (_kit/DESIGN-SYSTEM.md §3.2) =====
      Replaces Palabreo's 3px line with ten dots and a 24px score bubble. The score
      did not go with the bubble: it now lives inside the fill, which is where §3.2
@@ -253,11 +258,21 @@
     min-width: 4ch;
     text-align: right;
     font-family: var(--font-ui);
-    font-size: 11px; font-weight: 700;
+    font-size: 14px; font-weight: 700;
     font-variant-numeric: tabular-nums;
     letter-spacing: 0;
     color: var(--ink);
     line-height: 1; white-space: nowrap;
+    position: relative; /* Anchors the decorative score divider. */
+  }
+  /* Decorative divider; consumes no layout width (_kit §3.2). */
+  .rank-score::before {
+    content: '';
+    position: absolute;
+    left: -4px; top: 50%;
+    transform: translateY(-50%);
+    width: 1px; height: 14px;
+    background: var(--ink-line-strong);
   }
 
   /* Interior milestones only — ten ranks give EIGHT ticks (1..8). Rank 0 is the
