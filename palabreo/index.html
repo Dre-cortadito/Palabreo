@@ -2010,7 +2010,11 @@ function placeRankNow(){
 
   const goalEl=track.querySelector('.rank-goal');
   const chevEl=bar.querySelector('.rank-goal-chev');
-  const markerVisible = st.retoState==='pending';
+  /* A tick may only be hidden while something is actually covering it, and that
+     is the HAIRLINE, not the chevron (which now never leaves). On a miss the
+     hairline stays, so the tick under it stays hidden; on a win it merges away
+     and the tick comes back. §3.2, 2026-09-11. */
+  const hairlineOn = st.retoState!=='achieved';
   /* Position the marker on EVERY render, settled or not: leaving it unpositioned
      parks it at left:0, half outside the capsule, invisible only because the track
      clips overflow — a coincidence to rely on rather than a rule. */
@@ -2037,7 +2041,7 @@ function placeRankNow(){
      No marker on screen => nothing may be hidden on its account. */
   ticks.forEach(function(t){
     const c=parseFloat(t.style.left)||0;
-    t.classList.toggle('under-goal', markerVisible && Math.abs(c-goalPx)<RANK_TICK_GAP);
+    t.classList.toggle('under-goal', hairlineOn && Math.abs(c-goalPx)<RANK_TICK_GAP);
   });
 
   bar.classList.remove('rank-unplaced');
@@ -2070,16 +2074,21 @@ function renderRank(){
     track.appendChild(t);
   }
 
-  const settled = rs!=='pending';
+  /* §3.2 (2026-09-11): 'settled' conflated two different things and hid BOTH the
+     chevron and the hairline on either outcome. The chevron is the permanent
+     memory of where the goal was and never leaves. The hairline is the stateful
+     half: it merges away on a WIN only — a miss keeps it, so the gap between the
+     fill and the reto stays readable. */
+  const hairlineOn = rs!=='achieved';
   const goalEl=document.createElement('div');
-  goalEl.className='rank-goal'+(settled?' is-settled':'');
+  goalEl.className='rank-goal'+(hairlineOn?'':' is-settled');
   goalEl.title='Reto del día — '+RETO+' pts';
   track.appendChild(goalEl);
 
   /* the chevron lives OUTSIDE the track — the track clips its own overflow */
   let chevEl=bar.querySelector('.rank-goal-chev');
   if(!chevEl){ chevEl=document.createElement('div'); chevEl.className='rank-goal-chev'; bar.appendChild(chevEl); }
-  chevEl.className='rank-goal-chev'+(settled?' is-settled':'');
+  chevEl.className='rank-goal-chev';
 
   scoreEl.textContent=score;
 
