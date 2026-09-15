@@ -1431,8 +1431,11 @@ function waffleColors(cur,sol){
   }
   return col;
 }
+/* One count, two callers: wScore() and useHint(), which has to measure what a
+   pista placed. Duplicating the loop is how the two drift apart. */
+function wGreens(){ let n=0; for(let i=0;i<25;i++) if(WSOL[i]!=='.'&&WCUR[i]===WSOL[i]) n++; return n; }
 function wScore(){
-  let greens=0; for(let i=0;i<25;i++) if(WSOL[i]!=='.'&&WCUR[i]===WSOL[i]) greens++;
+  const greens=wGreens();
   wDone=(greens===21); solved=wDone;
   finished = wDone || wSwaps<=0;
   // ONE continuous, progress-led curve for live + final score (no jump on
@@ -1441,7 +1444,16 @@ function wScore(){
   // Maestro = a clean solve in <=13 of the 18 swaps, no hints (optimal is ~10,
   // so there's real margin). A full solve never floors below Increíble (~75).
   const denom=Math.max(1,21-wStartGreens);
-  const progress=Math.min(1, Math.max(0, greens-wStartGreens)/denom);
+  /* A Trenza pista PLACES tiles. Clasico's and Cuarteto's only reveal a letter,
+     so their hint cannot move the score; this one performs the scored action. Left
+     in the numerator it pays 120/denom per tile placed — 8.6 to 10.5 pts on a real
+     grid, against the flat 8 it charges — so a pista NETTED POSITIVE on every one
+     of the 553 grids and cost no swap either. wHintGreens holds what the pistas
+     placed. The DENOMINATOR stays put (ruling C1, 2026-09-15): with it fixed a
+     pista costs exactly HINT_PEN at every point on the board, which is what the
+     button's label promises. Shrinking it instead would keep the 100 ceiling but
+     let a late pista still pay out. Measured 2026-09-15. */
+  const progress=Math.min(1, Math.max(0, greens-wHintGreens-wStartGreens)/denom);
   const swapsUsed=Math.max(0, WF_BUDGET - wSwaps);
   const penalty=Math.max(0, swapsUsed-9)*5;
   score=Math.max(0, Math.min(100, Math.round(progress*120 - penalty)));
@@ -1641,9 +1653,13 @@ function qShareText(){
 }
 function retoFor(v,iso){ const c=VARIANTS[v]; const b=((c.retoMax-c.retoMin)/5)+1; return c.retoMin+(mix(fnv('r'+iso))%b)*5; }
 /* =========================== PISTAS (hints) =========================== */
-function saveHints(){ try{ LS.setItem(GAME+'-hints-'+ISO, JSON.stringify({u:hintsUsed,c:hintCells,q:qHintCells})); }catch(e){} }
-function loadHints(){ hintsUsed=0; hintCells=[]; qHintCells=[];
-  try{ const o=JSON.parse(LS.getItem(GAME+'-hints-'+ISO)); if(o){ hintsUsed=o.u||0; hintCells=Array.isArray(o.c)?o.c:[]; qHintCells=Array.isArray(o.q)?o.q:[]; } }catch(e){} }
+/* wHintGreens MUST persist: wStartGreens is recomputed from the untouched grid on
+   every load, so without w: the pista's tiles would silently become the player's
+   again on a refresh and the score would jump. A save written before 2026-09-15
+   has no w — it reads 0, so a game already in flight keeps the points it had. */
+function saveHints(){ try{ LS.setItem(GAME+'-hints-'+ISO, JSON.stringify({u:hintsUsed,c:hintCells,q:qHintCells,w:wHintGreens})); }catch(e){} }
+function loadHints(){ hintsUsed=0; hintCells=[]; qHintCells=[]; wHintGreens=0;
+  try{ const o=JSON.parse(LS.getItem(GAME+'-hints-'+ISO)); if(o){ hintsUsed=o.u||0; hintCells=Array.isArray(o.c)?o.c:[]; qHintCells=Array.isArray(o.q)?o.q:[]; wHintGreens=o.w||0; } }catch(e){} }
 
 function clasicoGreens(){ const s={}; for(let r=0;r<guesses.length;r++){ const g=guesses[r]; for(let i=0;i<WORD_LEN;i++) if(g[i]===ANSWER[i]) s[i]=1; } return s; }
 function clasicoHintAvail(){ const gr=clasicoGreens(); const a=[]; for(let i=0;i<WORD_LEN;i++){ if(!gr[i] && hintCells.indexOf(i)<0) a.push(i); } return a; }
@@ -1669,7 +1685,11 @@ function hintAvailable(){ if(finished) return false; const max=(VARIANTS[current
 
 function useHint(){ if(!hintAvailable()){ flash('Sin más pistas','error'); return; }
   if(isWaffle()){
-    const sw=trenzaHintSwap(); const arr=WCUR.split(''); const t=arr[sw.pos]; arr[sw.pos]=arr[sw.j]; arr[sw.j]=t; WCUR=arr.join('');
+    const sw=trenzaHintSwap(); const g0=wGreens();
+    const arr=WCUR.split(''); const t=arr[sw.pos]; arr[sw.pos]=arr[sw.j]; arr[sw.j]=t; WCUR=arr.join('');
+    /* Count BEFORE and AFTER: the swap always fixes sw.pos and sometimes sw.j too,
+       so the pista is worth 1 or 2 tiles and only the delta can tell which. */
+    wHintGreens += Math.max(0, wGreens()-g0);
     hintsUsed++; recompute(); wSave(); saveHints(); renderBoardState(); renderRank();
     flash('Pista: casilla colocada','bonus');
     if(finished){ if(wDone) flash('¡Resuelto!','success'); recordStats(); setTimeout(showResult,650); }
@@ -1769,7 +1789,7 @@ let RETO   = retoForDate(ISO);
 let ANSWER = wordForDate(ISO);
 let ANSWERS = [];            // quordle: the four answers
 let solvedRow = [-1,-1,-1,-1];
-let WSOL='', WCUR='', wSwaps=WF_BUDGET, wSel=-1, wDone=false, wStartGreens=0;
+let WSOL='', WCUR='', wSwaps=WF_BUDGET, wSel=-1, wDone=false, wStartGreens=0, wHintGreens=0;
 const HINT_PEN=8, HINT_STEP=3;   // hints COMPOUND in Clásico (8, 11, 14…); other modes use HINT_PEN flat. Score CAN go negative
 function clHintPenalty(n){ let p=0; for(let i=0;i<n;i++) p+=HINT_PEN+i*HINT_STEP; return p; }
 let hintsUsed=0, hintCells=[], qHintCells=[];  // hint state (per variant/day)
