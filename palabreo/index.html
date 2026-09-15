@@ -230,7 +230,7 @@
     overflow: hidden;
   }
   .rank-fill {
-    position: absolute; left: 2px; top: 2px; bottom: 2px;
+    position: absolute; left: 0; top: 0; bottom: 0;
     border-radius: 999px;
     background: var(--accent);
     display: flex; align-items: center; justify-content: flex-end;
@@ -1946,7 +1946,7 @@ const RETO_MARK = { pending:'', achieved:' ✓', failed:' ✕' };
    same width so the fill still meets its own milestone exactly, and the marker
    lands exactly on the target. Positions are PIXELS, so a resize must MOVE them,
    not merely re-test them. */
-const RANK_PAD = 2, RANK_TICK_GAP = 6;
+const RANK_PAD = 0, RANK_TICK_GAP = 6;
 /* The capsule's REAL content width, fractional. NOT clientWidth: that is an
    integer, so it rounds the content width by up to half a pixel, and because the
    left end is pinned at RANK_PAD the whole error lands on the RIGHT end. */
