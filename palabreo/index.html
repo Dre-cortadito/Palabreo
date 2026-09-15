@@ -64,8 +64,6 @@
     --rank-outline:   #a8a29a;   /* the capsule's own outline */
     --rank-tick-idle: #d8d3ca;   /* an upcoming milestone */
     --rank-tick-done: #111111;   /* a passed milestone — set from JS per accent */
-    --rank-cap:       14px;      /* the score's padding inside the fill */
-    --rank-inset:     12px;      /* the score's offset when it renders outside */
 
     /* ---- Layout (fixed numbers — DESIGN-SYSTEM.md §2) ---- */
     --header-h: 56px;
@@ -217,8 +215,12 @@
   }
   /* ===== THE CAPSULE (_kit/DESIGN-SYSTEM.md §3.2) =====
      Replaces Palabreo's 3px line with ten dots and a 24px score bubble. The score
-     did not go with the bubble: it now lives inside the fill, which is where §3.2
-     puts it for every point-scored mode. ================================== */
+     did not go with the bubble either — it is a sibling COLUMN beside the capsule,
+     not a plate riding inside the fill; see .rank-score below.
+     The capsule clips its own contents: overflow:hidden plus border-radius:999px
+     on .rank-track clips every descendant to the padding-box rounded rect, so the
+     fill and the green excess are square and the capsule makes the caps.
+     ================================== */
   .rank-track {
     position: relative;
     flex: 1 1 auto; min-width: 0;
@@ -231,15 +233,31 @@
   }
   .rank-fill {
     position: absolute; left: 0; top: 0; bottom: 0;
-    border-radius: 999px;
+    border-radius: 0;
     background: var(--accent);
     display: flex; align-items: center; justify-content: flex-end;
-    padding-right: var(--rank-cap);
     box-sizing: border-box;
     transition: width 0.3s ease;
     overflow: hidden;
   }
   .rank-fill.empty { display: none; }
+  /* The portion of the score BEYOND the day's reto, in --success. Flat left edge —
+     it continues the accent fill from the reto seam — and a square right end that
+     the capsule's own overflow clip finishes into the cap. No z-index: tree order
+     puts it over the fill, and the ticks (2) and the hairline (6) stay above it. */
+  .rank-fill-excess {
+    position: absolute; top: 0; bottom: 0;
+    border-radius: 0;
+    background: var(--success);
+    pointer-events: none;
+  }
+  .rank-fill-excess.empty { display: none; }
+  /* LOAD-BEARING. At 1-0-0 this outranks any class-level radius rule a later state
+     might add — Sudoku's .rank-fill.meets-excess (0-2-0) is exactly that — so the
+     accent/green seam can never round back into two pills floating in a capsule.
+     Do not remove. Palabreo 2026-09-15, after Sudoku 41208da/465f84c. */
+  #rank-fill,
+  #rank-track .rank-fill-excess { border-radius: 0; }
 
   /* The score is a COLUMN between the rank label and the capsule, not a plate
      riding inside the fill (_kit §3.2). Each element then has one job: the label
@@ -732,7 +750,7 @@
      computed height, so both re-place themselves at the breakpoint. */
   @media (min-width: 1024px) {
     body.game-active .rank-bar   { padding: 12px 0; }
-    body.game-active .rank-track { height: 30px; --rank-cap: 16px; --rank-inset: 16px; }
+    body.game-active .rank-track { height: 30px; }
     body.game-active .rank-goal-chev { width: 12px; height: 9px; }
     body.game-active .rank-chev  { font-size: 18px; }
     /* NOT the enlarged label, gap and score Sudoku and Racimo use at this
@@ -957,6 +975,7 @@
       <span class="rank-score" id="rank-score" aria-hidden="true">0</span>
       <div class="rank-track" id="rank-track">
         <div class="rank-fill empty" id="rank-fill"></div>
+        <div class="rank-fill-excess empty"></div>
       </div>
       <span class="rank-chev" aria-hidden="true">▾</span>
     </div>
@@ -1942,11 +1961,22 @@ const RETO_MARK = { pending:'', achieved:' ✓', failed:' ✕' };
 /* ---- the pixel pass (_kit §3.2) ----
    EVERY x on the bar is RANK_PAD + fraction * usable, where usable is
    rankContentWidth(track) - 2*RANK_PAD. One formula, one origin, one span: the
-   fill leaves the same 2px gap on both sides, the ticks are measured over the
-   same width so the fill still meets its own milestone exactly, and the marker
-   lands exactly on the target. Positions are PIXELS, so a resize must MOVE them,
-   not merely re-test them. */
-const RANK_PAD = 0, RANK_TICK_GAP = 6;
+   fill reaches the capsule's inner edge on both sides and the capsule's own
+   overflow clip makes the caps, the ticks are measured over the same width so the
+   fill still meets its own milestone exactly, and the marker lands exactly on the
+   target. Positions are PIXELS, so a resize must MOVE them, not merely re-test
+   them.
+   RANK_PAD was 2 until da579e2 (2026-09-15), when the fill's visible gutter was
+   removed. The scale survives the constant changing — keep it in step with
+   `left`/`top`/`bottom` on .rank-fill and with NOTHING else: a literal 2 left
+   behind in the pixel pass is what detached the green from the orange at the seam
+   in Sudoku (fixed in 41208da). */
+/* The hairline and a tick are both 2px wide and both style.left values are the
+   CENTRE (each carries translateX(-50%)), so centres closer than 2px is exactly
+   the overlap condition — not a tuned threshold, and width-independent. 6 falsely
+   hid a tick in 6 of the 16 cells across Palabreo's real reto domain {55..90} at
+   both the wide and the narrow track. Measured 2026-09-15. */
+const RANK_PAD = 0, RANK_TICK_GAP = 2;
 /* The capsule's REAL content width, fractional. NOT clientWidth: that is an
    integer, so it rounds the content width by up to half a pixel, and because the
    left end is pinned at RANK_PAD the whole error lands on the RIGHT end. */
@@ -2006,7 +2036,16 @@ function placeRankNow(){
      width here is what made the gap asymmetric elsewhere. */
   const empty = st.frac<=0.005;
   fill.classList.toggle('empty', empty);
-  fill.style.width=(empty?0:st.frac*usable)+'px';
+  /* st.frac is the TOTAL fraction; the accent fill stops at the reto seam and the
+     excess carries on from there to the score. Same split as Sudoku's place(). */
+  const orangeFrac=Math.max(0, st.frac-(st.excessFrac||0));
+  fill.style.width=(empty?0:orangeFrac*usable)+'px';
+  const exEl=track.querySelector('.rank-fill-excess');
+  if(exEl){
+    exEl.classList.toggle('empty', !(st.excessFrac>0.001));
+    exEl.style.left  = (RANK_PAD+orangeFrac*usable)+'px';
+    exEl.style.width = Math.max(0,(st.excessFrac||0)*usable)+'px';
+  }
 
   const goalEl=track.querySelector('.rank-goal');
   const chevEl=bar.querySelector('.rank-goal-chev');
@@ -2061,7 +2100,7 @@ function renderRank(){
      retoTrackPct() already walk RANK_THRESHOLDS and are NOT replaced by a flat
      percentage; they are only converted from a percentage of the track to a
      fraction of the capsule's usable inner width. */
-  track.innerHTML='<div class="rank-fill empty" id="rank-fill"></div>';
+  track.innerHTML='<div class="rank-fill empty" id="rank-fill"></div><div class="rank-fill-excess empty"></div>';
   /* the score is a sibling column, so rebuilding the track never touches it */
   const scoreEl=document.getElementById('rank-score');
 
@@ -2092,7 +2131,11 @@ function renderRank(){
 
   scoreEl.textContent=score;
 
-  _rankState={ frac:scoreTrackPct(score)/100, goalFrac:retoTrackPct()/100,
+  /* excessFrac uses the SAME test that drives .rank-goal.over-fill in
+     placeRankNow() — frac >= goalFrac — so the hairline blending into the fill and
+     the green starting past the reto switch on ONE condition, in one place. */
+  const rFrac=scoreTrackPct(score)/100, gFrac=retoTrackPct()/100;
+  _rankState={ frac:rFrac, goalFrac:gFrac, excessFrac:Math.max(0,rFrac-gFrac),
                retoState:rs, slots:slots };
   placeRank();
 
