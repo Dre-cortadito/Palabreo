@@ -365,6 +365,32 @@
   .rank-goal-chev.is-settled { opacity: 0; }
   .rank-goal-chev[hidden] { display: none; }
 
+  /* THE PERIMETER, painted by a sibling rather than by .rank-track itself.
+     Sudoku's finding, observed on iPhone Safari and NOT reproducible in Chromium:
+     the target marker replaced pixels of the capsule's border where it crossed —
+     the top band in every state. An element's own border always paints UNDER its
+     own descendants whatever z-index they carry, so the perimeter has to leave the
+     track to sit above them (outline was tried there: same paint tier, and
+     overflow:hidden suppresses it). z-index 8 clears the chevron (7), the hairline
+     (6) and the ticks (2). Lifted from Sudoku 2026-09-16. */
+  .rank-track-frame {
+    position: absolute;
+    border-radius: 999px;
+    border: 1.5px solid var(--rank-outline);
+    box-sizing: border-box;
+    z-index: 8;
+    pointer-events: none;
+  }
+  /* border-COLOR, not border:none — the 1.5px box has to stay or the capsule's
+     content width changes and EVERY x on the bar moves with it. */
+  .rank-track.rank-framed { border-color: transparent; }
+  /* Hidden until placeRankNow() has given it a real rect: unsized, its own border
+     paints a 3px dot at the flex row's content start. Deliberately NOT added to
+     the .rank-unplaced hide rule below — rank-framed persists across renders, so
+     hiding the frame there would leave the capsule with no outline at all for the
+     length of every score change. The two flags flip together instead. */
+  .rank-track-frame[hidden] { display: none; }
+
   /* Until the pixel pass has measured the track, nothing on the bar has a real x:
      every child would fall back to left:auto and pile up on the capsule's left
      edge, and the chevron — absolutely positioned in a FLEX row — would land at
@@ -2103,6 +2129,23 @@ function placeRankNow(){
     t.classList.toggle('under-goal', hairlineOn && Math.abs(c-goalPx)<RANK_TICK_GAP);
   });
 
+  /* Measured from the same two rects as the chevron and re-run on every pass, so a
+     resize or a rotation carries it. Not gated on the marker: the outline is there
+     in every state. See .rank-track-frame. */
+  const frameEl=bar.querySelector('.rank-track-frame');
+  if(frameEl){
+    const ftb=track.getBoundingClientRect(), fbb=bar.getBoundingClientRect();
+    frameEl.style.left  =(ftb.left-fbb.left)+'px';
+    frameEl.style.top   =(ftb.top -fbb.top )+'px';
+    frameEl.style.width =ftb.width +'px';
+    frameEl.style.height=ftb.height+'px';
+    /* Only now, and together: the track may not stop painting its own border until
+       a real frame is on screen to replace it, and vice versa. If this is never
+       reached the capsule simply keeps its original outline. */
+    frameEl.hidden=false;
+    track.classList.add('rank-framed');
+  }
+
   bar.classList.remove('rank-unplaced');
   return true;
 }
@@ -2148,6 +2191,12 @@ function renderRank(){
   let chevEl=bar.querySelector('.rank-goal-chev');
   if(!chevEl){ chevEl=document.createElement('div'); chevEl.className='rank-goal-chev'; bar.appendChild(chevEl); }
   chevEl.className='rank-goal-chev';
+
+  /* the perimeter is outside the track for the same reason as the chevron, and
+     created LAST so tree order agrees with its z-index. Reused, never rebuilt:
+     it is a sibling of the track, so the track's innerHTML never reaches it. */
+  let frameEl=bar.querySelector('.rank-track-frame');
+  if(!frameEl){ frameEl=document.createElement('div'); frameEl.className='rank-track-frame'; frameEl.hidden=true; bar.appendChild(frameEl); }
 
   scoreEl.textContent=score;
 
