@@ -2097,6 +2097,49 @@ function placeRank(){
   scheduleRankPlacement();
   return false;
 }
+let _tickRAF = 0;
+/* A tick lights when the FRONT reaches it, MEASURED — not when the score says it
+   should. renderRank() used to flip `passed` straight off the score while the width
+   eased 300ms behind it, so a tick went black up to 21px ahead of the fill (device,
+   2026-09-16). Sudoku never shows this because it animates the SCORE through rAF and
+   re-renders every frame; Palabreo animates the WIDTH in CSS, so only the RENDERED
+   width knows where the front is.
+   The front is read from .rank-fill-excess and NOT from .rank-fill: since the green
+   went under the orange the excess carries the TOTAL fill width while the orange is
+   clamped at the marker by max-width, so the excess's right edge IS the front.
+   Reading the orange would strand every tick past the reto, forever unlit.
+   One loop, cancelled and restarted on every placement, so an interrupted score
+   change re-aims at the new target instead of racing the old one. */
+function syncTicks(track, immediate){
+  const hasRAF = typeof requestAnimationFrame==='function';
+  if(_tickRAF && typeof cancelAnimationFrame==='function'){ cancelAnimationFrame(_tickRAF); }
+  _tickRAF=0;
+  const ticks=track.querySelectorAll('.rank-tick');
+  const ex=track.querySelector('.rank-fill-excess');
+  /* The fill starts at the track's left edge while the ticks are offset by RANK_PAD,
+     so the front is converted into the ticks' own coordinates before comparing. The
+     half pixel is float tolerance only: at score == threshold the two are the same
+     number, and the settled state must not depend on which way it rounds. */
+  const paint=function(){
+    const front=ex?ex.getBoundingClientRect().width:0;
+    ticks.forEach(function(t){
+      const x=(parseFloat(t.style.left)||0)-RANK_PAD;
+      t.classList.toggle('passed', front>=x-0.5);
+    });
+  };
+  paint();
+  if(immediate || !hasRAF) return;
+  const clock=function(){ return (typeof performance!=='undefined' && performance.now)?performance.now():Date.now(); };
+  const t0=clock();
+  const step=function(){
+    paint();
+    /* 420ms covers the 300ms width transition with margin; the loop is not a timer,
+       it stops itself. */
+    if(clock()-t0<420) _tickRAF=requestAnimationFrame(step);
+    else { _tickRAF=0; paint(); }
+  };
+  _tickRAF=requestAnimationFrame(step);
+}
 function placeRankNow(){
   const st=_rankState; if(!st) return false;
   const track=document.getElementById('rank-track');
@@ -2200,6 +2243,11 @@ function placeRankNow(){
     track.classList.add('rank-framed');
   }
 
+  /* Last, because it reads the ticks' own style.left, which this function set at the
+     top. immediate under reduced motion: with no transition the width is already
+     final, so one synchronous pass is the whole job and no loop is started. */
+  syncTicks(track, matchMedia('(prefers-reduced-motion: reduce)').matches);
+
   bar.classList.remove('rank-unplaced');
   return true;
 }
@@ -2250,10 +2298,8 @@ function renderRank(){
   const scoreEl=document.getElementById('rank-score');
 
   /* Interior milestones only: 1..slots-1, EIGHT ticks for ten ranks. They are built
-     once; only `passed` moves with the score. */
-  track.querySelectorAll('.rank-tick').forEach(function(t){
-    t.classList.toggle('passed', score>=RANK_THRESHOLDS[+t.dataset.i]);
-  });
+     once, and nothing about them moves with the score HERE: `passed` is set from the
+     measured fill front by syncTicks(), called at the end of placeRankNow(). */
 
   /* §3.2 (2026-09-11): 'settled' conflated two different things and hid BOTH the
      chevron and the hairline on either outcome. The chevron is the permanent
