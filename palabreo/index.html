@@ -249,6 +249,10 @@
     position: absolute; top: 0; bottom: 0;
     border-radius: 0;
     background: var(--success);
+    /* Above the reto the accent fill's width is PINNED at goalFrac and the green is
+       the only thing still moving, so without this the bar would glide below the
+       target and snap above it. Same duration as .rank-fill: one front, one speed. */
+    transition: width 0.3s ease;
     pointer-events: none;
   }
   .rank-fill-excess.empty { display: none; }
@@ -390,6 +394,15 @@
      hiding the frame there would leave the capsule with no outline at all for the
      length of every score change. The two flags flip together instead. */
   .rank-track-frame[hidden] { display: none; }
+
+  /* These transitions were all DEAD until 2026-09-16: renderRank() rebuilt the
+     track's contents on every render, and a transition has nothing to interpolate
+     from on an element that did not exist a moment ago. Now that the bar is built
+     once they actually run, so the reduced-motion opt-out has to exist. */
+  @media (prefers-reduced-motion: reduce) {
+    .rank-fill, .rank-fill-excess { transition: none; }
+    .rank-tick, .rank-goal { transition: none; }
+  }
 
   /* Until the pixel pass has measured the track, nothing on the bar has a real x:
      every child would fall back to left:auto and pile up on the capsule's left
@@ -1290,13 +1303,17 @@ function setColors(v){
   const s=document.body.style;
   /* The rank marker's two colours (_kit §3.2). STATIC — derived once per variant
      per theme and looked up here, never computed at render time.
-       --rank-goal-track  over the EMPTY track, and the chevron in every state,
-                          because the chevron always sits on the page. It is the
-                          variant's own --accent, unless the accent is itself under
-                          3.2:1 on that page — TRENZA LIGHT is the one such face in
-                          the whole system (#D99F3B measures 2.34:1 on white), so it
-                          falls back to --accent-deep #b28230 (3.43:1). No new
-                          colour enters the palette.
+       --rank-goal-track  over the EMPTY track, and the chevron and its stem in
+                          every state. It is the variant's own resolved --accent on
+                          EVERY face, so the marker reads as the same colour as the
+                          fill it points at — ruled on the device 2026-09-16.
+                          Trenza light used to fall back to --accent-deep #b28230
+                          because #D99F3B measures 2.34:1 on white, under the 3.2
+                          floor. That fallback is WITHDRAWN: visual unity with the
+                          bar was ruled to outweigh it, and Trenza light is the one
+                          face that pays for it. Keep every `track` value equal to
+                          the variant's resolved accent — the other five already
+                          were, so this table now only restates them.
        --rank-goal-fill   over the FILL: the variant's own accent ramp walked toward
                           white or black, whichever clears 4.5:1 with the SMALLER
                           mix. 4.5 rather than 3.2 because this line crosses the
@@ -1317,7 +1334,7 @@ function setColors(v){
   const GOAL_TINTS = {
     clasico: { light: { track:'#CF2A2A', fill:'#faebeb' }, dark: { track:'#da5959', fill:'#301313' } },
     quordle: { light: { track:'#d9633b', fill:'#35180e' }, dark: { track:'#e18566', fill:'#4d2d23' } },
-    waffle:  { light: { track:'#b28230', fill:'#513b16' }, dark: { track:'#e1b466', fill:'#5a4829' } }
+    waffle:  { light: { track:'#D99F3B', fill:'#513b16' }, dark: { track:'#e1b466', fill:'#5a4829' } }
   };
   const gt = (GOAL_TINTS[v] || GOAL_TINTS.clasico)[dark ? 'dark' : 'light'];
   s.setProperty('--rank-goal-track', gt.track);
@@ -2032,7 +2049,7 @@ function rankContentWidth(track){
        - (parseFloat(cs.borderLeftWidth)||0)
        - (parseFloat(cs.borderRightWidth)||0);
 }
-let _rankState=null, _rankRO=null, _rankRetry=0, _rankRetryTries=0;
+let _rankState=null, _rankRO=null, _rankRetry=0, _rankRetryTries=0, _rankBuilt=false;
 
 /* The pass needs a MEASURABLE track, and the observer that brings it back must be
    installed BEFORE the width test — a bar first laid out at width 0 otherwise
@@ -2081,10 +2098,16 @@ function placeRankNow(){
   /* A full bar leaves RANK_PAD on the right exactly as on the left. A percentage
      width here is what made the gap asymmetric elsewhere. */
   const empty = st.frac<=0.005;
+  const wasEmpty = fill.classList.contains('empty');
   fill.classList.toggle('empty', empty);
   /* st.frac is the TOTAL fraction; the accent fill stops at the reto seam and the
      excess carries on from there to the score. Same split as Sudoku's place(). */
   const orangeFrac=Math.max(0, st.frac-(st.excessFrac||0));
+  /* .empty is display:none, and a width transition off display:none has no start
+     value — a bar coming off zero snaps however long the transition is. Rewind to
+     a VISIBLE zero, COMMIT it with a forced reflow, then set the real width.
+     Sudoku's miniRevealBar() documents the same manoeuvre. */
+  if(wasEmpty && !empty){ fill.style.width='0px'; void fill.offsetWidth; }
   fill.style.width=(empty?0:orangeFrac*usable)+'px';
   const exEl=track.querySelector('.rank-fill-excess');
   if(exEl){
@@ -2150,6 +2173,33 @@ function placeRankNow(){
   return true;
 }
 
+/* Build ONCE. Until 2026-09-16 renderRank() replaced the track's entire contents
+   on every call — every swap, every pista — so each .rank-fill received its width
+   in the same task it was created. A CSS width transition interpolates from the
+   element's PREVIOUS computed value, and a new element has none: the
+   `transition: width 0.3s ease` declared on .rank-fill had never once fired, and
+   the bar teleported rather than moved. Sudoku never rebuilds its rank track; this
+   is that structure. Nothing here depends on the score, and nothing structural ever
+   changes: slots is RANK_THRESHOLDS.length-1 = 9 on every variant, and RANK_NAMES
+   and RANK_THRESHOLDS are module constants, so the tick titles are fixed at birth.
+   The DOM is re-checked rather than trusting the flag alone, so a track emptied by
+   anything else rebuilds instead of silently staying blank. */
+function buildRankOnce(track, slots){
+  if(_rankBuilt && track.querySelector('.rank-fill') && track.querySelector('.rank-goal')) return;
+  track.innerHTML='<div class="rank-fill empty" id="rank-fill"></div><div class="rank-fill-excess empty"></div>';
+  for(let i=1;i<slots;i++){
+    const t=document.createElement('div');
+    t.className='rank-tick';
+    t.dataset.i=String(i);
+    t.title=RANK_NAMES[i]+' — '+RANK_THRESHOLDS[i]+'+ pts';
+    track.appendChild(t);
+  }
+  const g=document.createElement('div');
+  g.className='rank-goal';
+  track.appendChild(g);
+  _rankBuilt=true;
+}
+
 function renderRank(){
   const curIdx=rankIndex(score), slots=RANK_THRESHOLDS.length-1;
   const rs=retoState();
@@ -2163,18 +2213,15 @@ function renderRank(){
      retoTrackPct() already walk RANK_THRESHOLDS and are NOT replaced by a flat
      percentage; they are only converted from a percentage of the track to a
      fraction of the capsule's usable inner width. */
-  track.innerHTML='<div class="rank-fill empty" id="rank-fill"></div><div class="rank-fill-excess empty"></div>';
-  /* the score is a sibling column, so rebuilding the track never touches it */
+  buildRankOnce(track, slots);
+  /* the score is a sibling column, so the track never touches it */
   const scoreEl=document.getElementById('rank-score');
 
-  /* Interior milestones only: 1..slots-1, which is EIGHT ticks for ten ranks. */
-  for(let i=1;i<slots;i++){
-    const t=document.createElement('div');
-    t.className='rank-tick'+(score>=RANK_THRESHOLDS[i]?' passed':'');
-    t.dataset.i=String(i);
-    t.title=RANK_NAMES[i]+' — '+RANK_THRESHOLDS[i]+'+ pts';
-    track.appendChild(t);
-  }
+  /* Interior milestones only: 1..slots-1, EIGHT ticks for ten ranks. They are built
+     once; only `passed` moves with the score. */
+  track.querySelectorAll('.rank-tick').forEach(function(t){
+    t.classList.toggle('passed', score>=RANK_THRESHOLDS[+t.dataset.i]);
+  });
 
   /* §3.2 (2026-09-11): 'settled' conflated two different things and hid BOTH the
      chevron and the hairline on either outcome. The chevron is the permanent
@@ -2182,10 +2229,9 @@ function renderRank(){
      half: it merges away on a WIN only — a miss keeps it, so the gap between the
      fill and the reto stays readable. */
   const hairlineOn = rs!=='achieved';
-  const goalEl=document.createElement('div');
-  goalEl.className='rank-goal'+(hairlineOn?'':' is-settled');
-  goalEl.title='Reto del día — '+RETO+' pts';
-  track.appendChild(goalEl);
+  const goalEl=track.querySelector('.rank-goal');
+  goalEl.classList.toggle('is-settled', !hairlineOn);
+  goalEl.title='Reto del día — '+RETO+' pts';   /* RETO changes per variant and per day */
 
   /* the chevron lives OUTSIDE the track — the track clips its own overflow */
   let chevEl=bar.querySelector('.rank-goal-chev');
