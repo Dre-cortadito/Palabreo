@@ -2118,16 +2118,22 @@ function placeRankNow(){
      grown. Below the reto it is exactly as wide as the orange and invisible under
      it, so there is nothing to hide. */
   if(exEl) exEl.classList.toggle('empty', empty);
-  /* The green spans the TOTAL fill; the orange stops at the reto seam and paints
-     over it. st.excessFrac still decides where the orange stops — target maths
-     unchanged — it just no longer positions a second element. */
-  const orangeFrac=Math.max(0, st.frac-(st.excessFrac||0));
-  /* .empty is display:none, and a width transition off display:none has no start
-     value — a bar coming off ZERO snaps however long the transition is. Rewind
-     both to a VISIBLE zero, COMMIT with a forced reflow, then set the real widths.
-     Sudoku's miniRevealBar() documents the same manoeuvre. */
+  /* ONE FRONT (2026-09-16). Both elements take the SAME width target, so they ease
+     over the SAME distance at the same speed; the orange is stopped at the marker
+     by max-width, whose used value is min(width, max-width) on every frame. The
+     green is therefore exposed at exactly the instant the front crosses the reto
+     and never a moment before.
+     Giving the orange its own shorter target (min(frac, goalFrac)) was wrong: same
+     300ms over a shorter distance means the green's edge leads the orange's for the
+     WHOLE transition, so the green appeared while the orange was still short of the
+     marker — 5px of green with the front 25px adrift, measured on device.
+     max-width is goalFrac and NOT min(frac, goalFrac) deliberately: a clamp that
+     tracked the score would drop to the new width instantly on a pista drop-back,
+     snapping the orange back while the green eased down behind it. Pinned at the
+     marker it is constant, so both fronts retreat together too. */
   if(wasEmpty && !empty){ fill.style.width='0px'; if(exEl) exEl.style.width='0px'; void fill.offsetWidth; }
-  fill.style.width=(empty?0:orangeFrac*usable)+'px';
+  fill.style.maxWidth=(st.goalFrac*usable)+'px';
+  fill.style.width=(empty?0:st.frac*usable)+'px';
   if(exEl) exEl.style.width=(empty?0:st.frac*usable)+'px';
 
   const goalEl=track.querySelector('.rank-goal');
