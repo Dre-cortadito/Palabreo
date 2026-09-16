@@ -231,8 +231,15 @@
     box-sizing: border-box;
     overflow: hidden;
   }
+  /* top/bottom -1px is a BLEED, not a size: overflow:hidden cuts it back to the
+     padding box, so the visible edge is the CLIP's edge over solid fill instead of
+     the fill's own antialiased edge meeting the border's over a transparent track.
+     Those two coincident edges let the page through in the partial-coverage row —
+     a white hairline, measured 2026-09-16 (#b7c5ab against a #618a52 fill and an
+     #a8a39f border: lighter than either, so white was mixing in). VERTICAL ONLY:
+     `left` is the origin every x on the bar is measured from. */
   .rank-fill {
-    position: absolute; left: 0; top: 0; bottom: 0;
+    position: absolute; left: 0; top: -1px; bottom: -1px;
     border-radius: 0;
     background: var(--accent);
     display: flex; align-items: center; justify-content: flex-end;
@@ -253,7 +260,7 @@
      Tree order puts it UNDER the fill; the ticks (2) and the hairline (6) carry
      their own z-index and stay above both. */
   .rank-fill-excess {
-    position: absolute; top: 0; bottom: 0; left: 0;
+    position: absolute; top: -1px; bottom: -1px; left: 0;   /* same bleed as .rank-fill */
     border-radius: 0;
     background: var(--success);
     /* Same duration as .rank-fill. Both fronts move together; one speed. */
