@@ -241,17 +241,22 @@
     overflow: hidden;
   }
   .rank-fill.empty { display: none; }
-  /* The portion of the score BEYOND the day's reto, in --success. Flat left edge —
-     it continues the accent fill from the reto seam — and a square right end that
-     the capsule's own overflow clip finishes into the cap. No z-index: tree order
-     puts it over the fill, and the ticks (2) and the hairline (6) stay above it. */
+  /* GREEN UNDERNEATH (2026-09-16). This spans the TOTAL fill, from 0 to the score,
+     and the accent fill paints OVER it stopping at the reto seam — so the seam is
+     the orange's own edge and the green is simply what the orange has not covered.
+     A hole between them is geometrically impossible: frac is never below
+     orangeFrac. It also never crosses display:none at the reto, so there is no
+     start value to lose and nothing to pop.
+     It used to be positioned by left+width AT the seam while the orange was still
+     easing toward it, which left the green floating 22.7px out ahead for a quarter
+     of a second — measured on device 2026-09-16, and the reason for this shape.
+     Tree order puts it UNDER the fill; the ticks (2) and the hairline (6) carry
+     their own z-index and stay above both. */
   .rank-fill-excess {
-    position: absolute; top: 0; bottom: 0;
+    position: absolute; top: 0; bottom: 0; left: 0;
     border-radius: 0;
     background: var(--success);
-    /* Above the reto the accent fill's width is PINNED at goalFrac and the green is
-       the only thing still moving, so without this the bar would glide below the
-       target and snap above it. Same duration as .rank-fill: one front, one speed. */
+    /* Same duration as .rank-fill. Both fronts move together; one speed. */
     transition: width 0.3s ease;
     pointer-events: none;
   }
@@ -367,6 +372,13 @@
     background: var(--rank-goal-track);
   }
   .rank-goal-chev.is-settled { opacity: 0; }
+  /* Sudoku's rule. The stem exists ONLY to bridge the chevron's apex to the
+     hairline across the capsule's border. Once the fill has reached the marker
+     there is no grey track left beneath it and the stem becomes a stub standing on
+     the fill — on Palabreo, a 2px gold chip sitting in the green (seen on device
+     2026-09-16). Driven by the same reached-marker test as the hairline blend. The
+     chevron's triangle itself never leaves: it is the permanent memory of the goal. */
+  .rank-goal-chev.no-stem::after { display: none; }
   .rank-goal-chev[hidden] { display: none; }
 
   /* THE PERIMETER, painted by a sibling rather than by .rank-track itself.
@@ -2099,22 +2111,24 @@ function placeRankNow(){
      width here is what made the gap asymmetric elsewhere. */
   const empty = st.frac<=0.005;
   const wasEmpty = fill.classList.contains('empty');
+  const exEl=track.querySelector('.rank-fill-excess');
   fill.classList.toggle('empty', empty);
-  /* st.frac is the TOTAL fraction; the accent fill stops at the reto seam and the
-     excess carries on from there to the score. Same split as Sudoku's place(). */
+  /* BOTH hide only at a genuinely empty bar. Keying the green off excessFrac made
+     it cross display:none AT THE RETO, which is what made it pop into place fully
+     grown. Below the reto it is exactly as wide as the orange and invisible under
+     it, so there is nothing to hide. */
+  if(exEl) exEl.classList.toggle('empty', empty);
+  /* The green spans the TOTAL fill; the orange stops at the reto seam and paints
+     over it. st.excessFrac still decides where the orange stops — target maths
+     unchanged — it just no longer positions a second element. */
   const orangeFrac=Math.max(0, st.frac-(st.excessFrac||0));
   /* .empty is display:none, and a width transition off display:none has no start
-     value — a bar coming off zero snaps however long the transition is. Rewind to
-     a VISIBLE zero, COMMIT it with a forced reflow, then set the real width.
+     value — a bar coming off ZERO snaps however long the transition is. Rewind
+     both to a VISIBLE zero, COMMIT with a forced reflow, then set the real widths.
      Sudoku's miniRevealBar() documents the same manoeuvre. */
-  if(wasEmpty && !empty){ fill.style.width='0px'; void fill.offsetWidth; }
+  if(wasEmpty && !empty){ fill.style.width='0px'; if(exEl) exEl.style.width='0px'; void fill.offsetWidth; }
   fill.style.width=(empty?0:orangeFrac*usable)+'px';
-  const exEl=track.querySelector('.rank-fill-excess');
-  if(exEl){
-    exEl.classList.toggle('empty', !(st.excessFrac>0.001));
-    exEl.style.left  = (RANK_PAD+orangeFrac*usable)+'px';
-    exEl.style.width = Math.max(0,(st.excessFrac||0)*usable)+'px';
-  }
+  if(exEl) exEl.style.width=(empty?0:st.frac*usable)+'px';
 
   const goalEl=track.querySelector('.rank-goal');
   const chevEl=bar.querySelector('.rank-goal-chev');
@@ -2141,6 +2155,10 @@ function placeRankNow(){
       chevEl.style.top =((tb.top-bb.top)-chevH)+'px';
     }
   }
+  /* The stem tracks what is UNDER it, not the chevron: once the fill has reached
+     the marker it has no border-and-track to bridge. Same test as the hairline
+     blend, plus the settled case where the hairline has gone entirely. */
+  if(chevEl) chevEl.classList.toggle('no-stem', st.frac>=st.goalFrac || !hairlineOn);
   /* The only collision left on the bar is the marker over a milestone tick. The
      score used to be the other one — riding inside the fill, it could be struck
      through by the marker or clip a tick at its plate's edge, and it needed a
@@ -2186,7 +2204,8 @@ function placeRankNow(){
    anything else rebuilds instead of silently staying blank. */
 function buildRankOnce(track, slots){
   if(_rankBuilt && track.querySelector('.rank-fill') && track.querySelector('.rank-goal')) return;
-  track.innerHTML='<div class="rank-fill empty" id="rank-fill"></div><div class="rank-fill-excess empty"></div>';
+  /* The excess comes FIRST so the accent fill paints over it — see .rank-fill-excess. */
+  track.innerHTML='<div class="rank-fill-excess empty"></div><div class="rank-fill empty" id="rank-fill"></div>';
   for(let i=1;i<slots;i++){
     const t=document.createElement('div');
     t.className='rank-tick';
