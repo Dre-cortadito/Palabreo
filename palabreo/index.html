@@ -2753,7 +2753,7 @@ function boot(){
     const menuBtn=document.getElementById('menu-btn');
     menuBtn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleMenu(); });
     document.addEventListener('click', (e)=>{ if(!e.target.closest('.header-nav')) toggleMenu(false); });
-    document.getElementById('m-theme').addEventListener('click', ()=>{ toggleTheme(); toggleMenu(false); });
+    document.getElementById('m-theme').addEventListener('click', (e)=>{ e.preventDefault(); toggleTheme(); toggleMenu(false); });   /* href="#" → popstate → landing; see [data-modal] above */
     document.getElementById('m-share').addEventListener('click', (e)=>{ e.preventDefault(); toggleMenu(false); doShare(); });          /* href="#" → popstate → landing; see [data-modal] above */
     document.getElementById('m-sub').addEventListener('click', (e)=>{ e.preventDefault(); toggleMenu(false); window.open(NEWSLETTER_URL,'_blank'); });
     document.getElementById('land-sub').addEventListener('click', ()=>window.open(NEWSLETTER_URL,'_blank'));
