@@ -830,8 +830,8 @@
   body.pr-open .page-header .header-nav > :not(#home-btn) { visibility: hidden; }
   .pr-flow { line-height: 1.55; --r-ink: #1a1614; --r-soft: #5f5852; --r-line: #e6ddd3; --r-dot: #948b80; --r-acc: #B3261E; --r-btn-ink: #ffffff; --r-fill: var(--r-acc); --r-fill-ink: var(--r-btn-ink); }   /* --r-acc: text accents; --r-fill: buttons and the active dot */
   body[data-theme="black"] .pr-flow { --r-ink: #f3eee4; --r-soft: #b4aba1; --r-line: #3a322c; --r-dot: #6b625a; --r-acc: #F28B84; --r-btn-ink: #1a1614; }
-  .pr-flow.pr-waffle { --r-acc: #8A5A10; --r-fill: #D99F3B; --r-fill-ink: #1a1614; }   /* c5: Trenza's game yellow on fills with dark text (7.68:1); text accents stay the darkened yellow (5.91:1 on white — #D99F3B itself is 2.34:1) */
-  body[data-theme="black"] .pr-flow.pr-waffle { --r-acc: #e1b466; --r-fill: #e1b466; --r-fill-ink: #1a1614; }   /* the game's own resolved dark accent */
+  .pr-flow.pr-waffle { --r-acc: var(--r-ink); --r-fill: #D99F3B; --r-fill-ink: #1a1614; }   /* c8: Trenza text accents use the page ink (neutral, readable); fills keep the game yellow with dark text (7.68:1) */
+  body[data-theme="black"] .pr-flow.pr-waffle { --r-acc: #e1b466; --r-fill: #e1b466; --r-fill-ink: #1a1614; }   /* the game's own resolved dark accent (candidate 5 kept; c8 rev 2 changes the light theme only) */
   .pr-flow.pr-quordle { --r-acc: #A8431C; }
   body[data-theme="black"] .pr-flow.pr-quordle { --r-acc: #F2946B; }
   /* p2 frame: every page fills the result area; date at the top, actions + dots at the bottom,
