@@ -828,25 +828,25 @@
   body.pr-open .pr-flow { display: block; position: fixed; left: 0; right: 0; top: var(--pr-top, 56px); bottom: 0; z-index: 9000;
     background: var(--bg); overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 0 16px; box-sizing: border-box; outline: none; }
   body.pr-open .page-header .header-nav > :not(#home-btn) { visibility: hidden; }
-  .pr-flow { line-height: 1.55; --r-ink: #1a1614; --r-soft: #5f5852; --r-line: #e6ddd3; --r-dot: #948b80; --r-acc: #B3261E; --r-btn-ink: #ffffff; }
+  .pr-flow { line-height: 1.55; --r-ink: #1a1614; --r-soft: #5f5852; --r-line: #e6ddd3; --r-dot: #948b80; --r-acc: #B3261E; --r-btn-ink: #ffffff; --r-fill: var(--r-acc); --r-fill-ink: var(--r-btn-ink); }   /* --r-acc: text accents; --r-fill: buttons and the active dot */
   body[data-theme="black"] .pr-flow { --r-ink: #f3eee4; --r-soft: #b4aba1; --r-line: #3a322c; --r-dot: #6b625a; --r-acc: #F28B84; --r-btn-ink: #1a1614; }
-  .pr-flow.pr-waffle { --r-acc: #8A5A10; }
-  body[data-theme="black"] .pr-flow.pr-waffle { --r-acc: #E8B45E; }
+  .pr-flow.pr-waffle { --r-acc: #8A5A10; --r-fill: #D99F3B; --r-fill-ink: #1a1614; }   /* c5: Trenza's game yellow on fills with dark text (7.68:1); text accents stay the darkened yellow (5.91:1 on white — #D99F3B itself is 2.34:1) */
+  body[data-theme="black"] .pr-flow.pr-waffle { --r-acc: #e1b466; --r-fill: #e1b466; --r-fill-ink: #1a1614; }   /* the game's own resolved dark accent */
   .pr-flow.pr-quordle { --r-acc: #A8431C; }
   body[data-theme="black"] .pr-flow.pr-quordle { --r-acc: #F2946B; }
   /* p2 frame: every page fills the result area; date at the top, actions + dots at the bottom,
      the page's own content centred in between. Taller than the window → the area scrolls. */
   .pr-page { display: none; position: relative; z-index: 1; max-width: 400px; margin: 0 auto; padding: 24px 0 calc(24px + env(safe-area-inset-bottom, 0px)); text-align: center; color: var(--r-ink); outline: none; }
   /* p3: the page is exactly the result area's height. Date and footer are fixed rows; only .pr-body
-     scrolls. Two spacers centre the content; the lower one is capped (--pr-gap-cap), so on tall
-     windows the content settles toward the actions instead of floating far above them. */
+     scrolls. c5 (2026-10-01, Dre): the content is top-aligned under the date so the title starts at the
+     same height on all three pages; the lower spacer takes the remaining room (the c3 gap cap is gone). */
   .pr-page.is-on { display: flex; flex-direction: column; height: 100%; min-height: 0; box-sizing: border-box; }
   .pr-page > .pr-date { flex: 0 0 auto; margin: 0; }
-  .pr-body { --pr-gap-cap: 56px; flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  .pr-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
     display: flex; flex-direction: column; padding: 16px 0; box-sizing: border-box; }
   .pr-body:focus-visible { outline: 2px solid var(--r-ink); outline-offset: -2px; }
   .pr-space { flex: 1 1 0; min-height: 0; }
-  .pr-space-bot { max-height: var(--pr-gap-cap); }
+  .pr-space-top { flex: 0 0 0px; }
   .pr-content { flex: 0 0 auto; }
   .pr-foot { flex: 0 0 auto; padding-top: 12px; }
   .pr-body.is-scroll + .pr-foot { border-top: 1px solid var(--r-line); }   /* a quiet edge when content scrolls under it */
@@ -882,7 +882,7 @@
   .pr-share-lead { font-family: var(--font-ui); font-size: 16px; line-height: 1.4; margin: 12px 0 0; color: var(--r-ink); }
   .pr-btns { margin-top: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .pr-btn { font-family: var(--font-ui); font-size: 14px; font-weight: 600; min-height: 44px; min-width: 200px; padding: 10px 24px; border-radius: 999px; cursor: pointer;
-    background: var(--r-acc); border: 1px solid var(--r-acc); color: var(--r-btn-ink); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    background: var(--r-fill); border: 1px solid var(--r-fill); color: var(--r-fill-ink); touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   .pr-exit { font-family: var(--font-ui); font-size: 14px; font-weight: 600; min-height: 44px; min-width: 200px; padding: 10px 24px; border-radius: 999px; background: transparent; border: 0; cursor: pointer;
     color: var(--r-ink); text-decoration: underline; text-underline-offset: 3px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
   /* c4: same press feedback as Mini (.modal .btn-row button) */
@@ -891,7 +891,7 @@
   .pr-btn:focus-visible, .pr-exit:focus-visible { outline: 2px solid var(--r-ink); outline-offset: 3px; }
   .pr-steps { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 0; }
   .pr-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--r-dot); transition: width .2s ease; }
-  .pr-dot.is-on { width: 22px; border-radius: 4px; background: var(--r-acc); }
+  .pr-dot.is-on { width: 22px; border-radius: 4px; background: var(--r-fill); }
   @media (prefers-reduced-motion: reduce) { .pr-dot { transition: none; } }
 </style>
 
