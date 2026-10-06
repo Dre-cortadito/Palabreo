@@ -2727,7 +2727,8 @@ function prOpen(){
 }
 let prWin=null;
 function prNext(){
-  if(prStep===0){ prShow(1); if(prWin && prWin.met) prConfetti(prWin.isMaestro?120:90); }
+  /* fs1 (Dre, 2026-10-06, Games-wide): a met Reto del día gets the game's full-screen burst (launchConfetti), over everything, every width — not the margin canvas */
+  if(prStep===0){ prShow(1); if(prWin && prWin.met) launchConfetti(prWin.isMaestro?120:90); }
   else if(prStep===1){ prShow(2); }
 }
 function prClose(){
