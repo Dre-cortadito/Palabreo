@@ -1072,6 +1072,12 @@
 #tut-ov .tut-rank-fill-label{position:relative;display:block;text-align:left;margin:7px 0 0;font-size:13px;font-weight:700;color:var(--ink)}
 #tut-ov .tut-rank-demo *{animation:none!important;transition:none!important}
 </style>
+
+<!-- CG-MASCOT-HEAD BEGIN -->
+<link rel="stylesheet" href="/palabreo/_mascot/20261013-nine-abd/mascot.css">
+<script defer src="/palabreo/_mascot/20261013-nine-abd/daily-selector.js"></script>
+<script defer src="/palabreo/_mascot/20261013-nine-abd/mascot.js"></script>
+<!-- CG-MASCOT-HEAD END -->
 </head>
 <body data-theme="light">
 
@@ -2718,6 +2724,10 @@ function prFill(){
     if(!solved) L.appendChild(prRow('Eran:', ANSWERS.map(w=>w.toUpperCase()).join(', '), true)); }
   else { if(solved) L.appendChild(prRow('Intentos:', guesses.length+'/'+MAX_ROWS)); else L.appendChild(prRow('La palabra era:', ANSWER.toUpperCase(), true)); }
   L.appendChild(prRow('', hintLine()));      /* the same hint line the share text carries */
+/* CG-MASCOT-ONLY BEGIN */
+if(window.CGMascot && window.DailyMascot) CGMascot.render({host:"#pr-done .pr-content",mode:({'clasico':'palabreo-clasico','waffle':'palabreo-trenza','quordle':'palabreo-cuarteto'})[mode],day:todayISO(),eligible:!!solved,scope:fl,freeze:document.body.classList.contains('pr-open'),onLayout:prSyncScroll});
+/* CG-MASCOT-ONLY END */
+
   /* page 2 — Reto del día */
   document.getElementById('pr-reto-sorbo').hidden=!met;
   const st=document.getElementById('pr-reto-status'); st.textContent=met?'✅ Logrado':'❌ No alcanzado';
