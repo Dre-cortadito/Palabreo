@@ -3389,5 +3389,102 @@ function cgSnapshotStreaks(rows) {
   try{ window.matchMedia(MQ).addEventListener('change', apply); }catch(e){}
 })();
 </script>
+
+<!-- CANONICAL RESULT PREVIEW: isolated, not a release -->
+<style>
+/* Preserve the existing fixed-date / scrolling-middle / pinned-footer design. */
+[data-cg-canonical-frame]{position:fixed!important;left:0!important;right:auto!important;top:var(--cg-frame-top)!important;width:var(--cg-frame-width)!important;height:var(--cg-frame-height)!important;bottom:auto!important;overflow:hidden!important;box-sizing:border-box;}
+/* Existing stamp's existing short-screen size, chosen when full size would not fit. */
+.cg-daily-mascot[data-cg-compact]{width:96px;height:96px;margin-top:16px;}
+/* Trenza rank: established readable yellow text tone from the result standard.
+   The game's #D99F3B fill/stamp palette remains unchanged (2.34:1 on white).
+   Dark uses the existing resolved game accent, #e1b466. */
+.pr-flow.pr-waffle #pr-done-rank{--cg-trenza-rank-ink:#8A5A10;color:var(--cg-trenza-rank-ink);}
+body[data-theme="black"] .pr-flow.pr-waffle #pr-done-rank{color:var(--accent);}
+/* Allow enlarged text/long facts to occupy additional middle rows, keeping actions fixed. */
+#pr-flow .pr-lead,.mini-page-card .mini-lead{flex-wrap:wrap;row-gap:12px;}
+#pr-flow .pr-stat,.mini-page-card .mini-stat-cell{min-width:0;max-width:100%;}
+#pr-flow .pr-stat-num,.mini-page-card .mini-stat-num{white-space:normal;overflow-wrap:anywhere;}
+#pr-flow .pr-title,.mini-page-card .mini-title{overflow-wrap:anywhere;}
+#pr-flow .pr-status,#pr-flow .pr-meta,#pr-flow .pr-cheer-line,.mini-page-card .mini-cheer-line,.mini-page-card .mini-out{white-space:normal;overflow-wrap:anywhere;}
+#modal-overlay .mini-page-card .mini-cheer-line,#modal-overlay .mini-page-card .mini-out{white-space:normal;overflow-wrap:anywhere;}
+/* Owner: assistance and actual record share a secondary line, with natural wrapping. */
+#mini-done-list .mini-row-summary{display:block;text-align:center;white-space:normal;}
+#mini-done-list .mini-summary-aids{font-weight:400;}
+#mini-done-list .mini-summary-aids[hidden]{display:none;}
+#mini-done-list .mini-summary-aids .mini-row-v{font-weight:400;}
+#mini-done-list .mini-row-rec{white-space:normal;}
+/* Preserve type/date/title/footer positions; recover unused internal gaps before scrolling. */
+#pr-flow [data-cg-tight] .pr-lead,#modal-overlay .mini-page-card[data-cg-tight] .mini-lead{margin-top:16px;}
+#pr-flow [data-cg-tight] .pr-list,#modal-overlay .mini-page-card[data-cg-tight] .mini-list{margin-top:12px;padding-top:12px;}
+#pr-flow [data-cg-tight] .cg-daily-mascot[data-cg-compact],#modal-overlay .mini-page-card[data-cg-tight] .cg-daily-mascot[data-cg-compact]{margin-top:8px;}
+#pr-flow [data-cg-tight] .pr-body,#modal-overlay .mini-page-card[data-cg-tight] .mini-fbody{padding-bottom:8px;}
+</style>
+<script>
+(function(){'use strict';
+const phone=matchMedia('(max-width: 879.98px), (max-aspect-ratio: 2/3) and (pointer: coarse)');let layer=null,queued=false;
+const observedContent=new WeakSet(),contentResize=new ResizeObserver(schedule);
+function visible(e){return !!e&&e.getClientRects().length&&getComputedStyle(e).display!=='none';}
+function clear(){if(!layer)return;layer.removeAttribute('data-cg-canonical-frame');['--cg-frame-top','--cg-frame-width','--cg-frame-height'].forEach(k=>layer.style.removeProperty(k));layer=null;}
+function fit(){queued=false;const body=document.body;let next=null;
+ if(body.classList.contains('pr-open'))next=document.getElementById('pr-flow');
+ else if(body.classList.contains('mini-fullpage'))next=document.getElementById('modal-overlay');
+ if(next&&phone.matches){if(layer&&layer!==next)clear();layer=next;layer.setAttribute('data-cg-canonical-frame','');const h=document.querySelector('.page-header'),z=parseFloat(getComputedStyle(body).zoom)||1,v=visualViewport,top=Math.max(0,Math.round(h?h.getBoundingClientRect().bottom:0)),bottom=v&&Math.abs(v.scale-1)<.01?v.offsetTop+v.height:innerHeight,w=v&&Math.abs(v.scale-1)<.01?v.width:document.documentElement.clientWidth;
+ for(const [k,n]of [['--cg-frame-top',top/z],['--cg-frame-width',w/z],['--cg-frame-height',Math.max(0,bottom-top)/z]])if(layer.style.getPropertyValue(k)!==n+'px')layer.style.setProperty(k,n+'px');
+ }else clear();
+ const pages=[...document.querySelectorAll('#pr-flow .pr-page.is-on,#modal-overlay.open .mini-page-card')].filter(visible);
+ for(const p of pages){const b=p.querySelector('.pr-body,.mini-fbody'),c=p.querySelector('.pr-content,.mini-fcontent'),f=c?.querySelector('.cg-daily-mascot');if(!b||!c)continue;
+ p.removeAttribute('data-cg-tight');
+ if(!observedContent.has(c)){observedContent.add(c);contentResize.observe(c);}
+ if(f&&!f.hidden){
+ f.removeAttribute('data-cg-compact');
+ const z=parseFloat(getComputedStyle(body).zoom)||1,bs=getComputedStyle(b),available=b.clientHeight-parseFloat(bs.paddingTop)-parseFloat(bs.paddingBottom);
+ p.toggleAttribute('data-cg-tight',c.getBoundingClientRect().height/z>available+.5);
+ }
+ const scroll=b.scrollHeight>b.clientHeight+1;b.classList.toggle('is-scroll',scroll);if(scroll){b.setAttribute('tabindex','0');b.setAttribute('role','region');b.setAttribute('aria-label','Resultado');}else{b.removeAttribute('tabindex');b.removeAttribute('role');b.removeAttribute('aria-label');}
+ }
+}
+function schedule(){if(!queued){queued=true;requestAnimationFrame(fit);}}
+if(document.fonts){document.fonts.ready.then(schedule);document.fonts.addEventListener('loadingdone',schedule);}
+new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class','style','hidden']});window.addEventListener('resize',schedule);window.addEventListener('orientationchange',schedule);phone.addEventListener('change',schedule);if(visualViewport){visualViewport.addEventListener('resize',schedule);visualViewport.addEventListener('scroll',schedule);}window.cgFitResultStamp=schedule;schedule();
+})();
+</script>
+
+<!-- GAMES PRESENTATION AUDIT V2: isolated, unpublished -->
+<style>
+/* Only on-accent text changes. Native tutorial fill/type/geometry are untouched. */
+.tut-ov .tut-next{color:var(--cg-tutorial-ink,#ffffff);}
+/* Reuse the existing statistics frame, scale and palette; allow large text to wrap. */
+#mini-stats-modal .stat-value{overflow-wrap:anywhere;}
+#mini-stats-modal .modal-title{overflow-wrap:anywhere;}
+#mini-stats-modal .stats-note{margin:-2px 0 10px;font-size:12px;color:var(--ink-soft);font-style:italic;}
+#mini-stats-modal .stats-footer{margin:22px 0 0;font-size:12px;color:var(--ink-soft);font-style:italic;line-height:1.55;}
+</style>
+<script>
+(function(){'use strict';
+const ov=document.getElementById('tut-ov'),button=document.getElementById('tut-next');if(!ov||!button)return;
+let queued=false;
+function rgb(value){const a=value.match(/[\d.]+/g);if(!a)return null;return a.slice(0,3).map(Number).map(n=>value.startsWith('color(')?n*255:n);}
+function luminance(a){return a.map(n=>n/255).map(n=>n<=.04045?n/12.92:Math.pow((n+.055)/1.055,2.4)).reduce((v,n,i)=>v+n*[.2126,.7152,.0722][i],0);}
+function contrast(a,b){const x=luminance(a),y=luminance(b);return(Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+function sync(){queued=false;if(!ov.classList.contains('open'))return;const bg=rgb(getComputedStyle(button).backgroundColor);if(!bg)return;const choices=[['#ffffff',[255,255,255]],['#1a1614',[26,22,20]],['#0c0f0f',[12,15,15]]];const ink=(choices.find(x=>contrast(x[1],bg)>=4.5)||choices[2])[0];if(button.style.getPropertyValue('--cg-tutorial-ink')!==ink)button.style.setProperty('--cg-tutorial-ink',ink);}
+function schedule(){if(!queued){queued=true;requestAnimationFrame(sync);}}
+const observer=new MutationObserver(schedule);
+observer.observe(document.body,{attributes:true,attributeFilter:['data-theme','class','style']});
+observer.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','style']});
+observer.observe(ov,{attributes:true,attributeFilter:['class','style']});
+schedule();
+})();
+</script>
+
+<!-- OWNER VISUAL CORRECTIONS V3: isolated, unpublished -->
+<style>
+/* Established release asset size; scrolling never substitutes a smaller stamp. */
+#pr-flow .cg-daily-mascot,#modal-overlay .cg-daily-mascot{width:232px;height:232px;max-width:100%;}
+/* Recover secondary whitespace while preserving type, dates and action geometry. */
+#pr-flow [data-cg-tight] .pr-lead,#modal-overlay .mini-page-card[data-cg-tight] .mini-lead{margin-top:16px;}
+#pr-flow [data-cg-tight] .pr-list,#modal-overlay .mini-page-card[data-cg-tight] .mini-list{margin-top:12px;padding-top:12px;}
+#pr-flow [data-cg-tight] .cg-daily-mascot,#modal-overlay .mini-page-card[data-cg-tight] .cg-daily-mascot{margin-top:12px;}
+</style>
 </body>
 </html>
