@@ -1,0 +1,14 @@
+/* Supplied rank sticker: complete square art, readable at narrow phone widths. */
+.cg-rank-sticker{--cg-rank-ready:1;position:relative;display:grid;place-items:center;width:clamp(188px,62vw,232px);max-width:100%;aspect-ratio:1;margin:20px auto 0;padding:0;border:0;box-shadow:none;flex:none;pointer-events:none;}
+.cg-rank-sticker[hidden]{display:none;}
+.cg-rank-canvas{display:block;width:100%;height:auto;aspect-ratio:1;}
+.cg-rank-source{display:none!important;}
+.cg-rank-sticker[data-ready="1"][data-reveal="enter"] .cg-rank-canvas{animation:cg-rank-reveal 1200ms ease-in-out both;}
+@keyframes cg-rank-reveal{from{clip-path:inset(0 100% 0 0);}to{clip-path:inset(0 0 0 0);}}
+@media(prefers-reduced-motion:reduce){.cg-rank-sticker[data-ready="1"][data-reveal="enter"] .cg-rank-canvas{animation:none;}}
+@media(max-height:560px){.cg-rank-sticker{width:188px;margin-top:16px;}}
+/* Preserve existing Cuarteto label treatment and remove ending footer seams only. */
+.pr-flow.pr-quordle .pr-btn{color:#ffffff;}
+.pr-flow .pr-foot,body.mini-fullpage .mini-page-card .mini-ffoot{border-top:0;}
+.pr-flow .pr-body.is-scroll + .pr-foot{border-top:0;}
+body.mini-fullpage .mini-page-card .mini-fbody.is-scroll + .mini-ffoot{border-top:0;}

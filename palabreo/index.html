@@ -1074,9 +1074,8 @@
 </style>
 
 <!-- CG-MASCOT-HEAD BEGIN -->
-<link rel="stylesheet" href="/palabreo/_mascot/20261014-ending-footers/mascot.css">
-<script defer src="/palabreo/_mascot/20261014-stamp-roll/daily-selector.js"></script>
-<script defer src="/palabreo/_mascot/20261014-stamp-roll/mascot.js"></script>
+<link rel="stylesheet" href="/palabreo/_rank-stickers/20261017-earned-rank/rank-stickers.css">
+<script defer src="/palabreo/_rank-stickers/20261017-earned-rank/rank-stickers.js"></script>
 <!-- CG-MASCOT-HEAD END -->
 </head>
 <body data-theme="light">
@@ -2725,7 +2724,7 @@ function prFill(){
   else { if(solved) L.appendChild(prRow('Intentos:', guesses.length+'/'+MAX_ROWS)); else L.appendChild(prRow('La palabra era:', ANSWER.toUpperCase(), true)); }
   L.appendChild(prRow('', hintLine()));      /* the same hint line the share text carries */
 /* CG-MASCOT-ONLY BEGIN */
-if(window.CGMascot && window.DailyMascot) CGMascot.render({host:"#pr-done .pr-content",mode:({'clasico':'palabreo-clasico','waffle':'palabreo-trenza','quordle':'palabreo-cuarteto'})[mode],day:todayISO(),eligible:!!solved,scope:fl,freeze:document.body.classList.contains('pr-open'),onLayout:prSyncScroll});
+if(window.CGRankStickers) CGRankStickers.render({host:"#pr-done .pr-content",rankIndex:idx,mode:({'clasico':'palabreo-clasico','waffle':'palabreo-trenza','quordle':'palabreo-cuarteto'})[mode],eligible:!!solved,scope:fl,freeze:document.body.classList.contains('pr-open'),onLayout:prSyncScroll});
 /* CG-MASCOT-ONLY END */
 
   /* page 2 — Reto del día */
